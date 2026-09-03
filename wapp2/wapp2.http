@@ -1,0 +1,6 @@
+@wapp2_HostAddress = http://localhost:5104
+
+GET {{wapp2_HostAddress}}/api/employee/all
+Accept: application/json
+
+###
