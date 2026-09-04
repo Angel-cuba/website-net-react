@@ -13,6 +13,18 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<IVideoGameCharacterRepository, VideoGameCharacterRepository>();
 builder.Services.AddScoped<IVideoGameCharacterService, VideoGameCharacterService>();
 
+// Enable CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendLocal", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 
 var app = builder.Build();
 
@@ -24,6 +36,7 @@ if (app.Environment.IsDevelopment())
 
 
 app.UseHttpsRedirection();
+app.UseCors("FrontendLocal");
 
 app.UseAuthorization();
 

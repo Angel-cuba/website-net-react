@@ -6,6 +6,27 @@ import "./App.css";
 
 function App() {
   const [count, setCount] = useState(0);
+
+  const urls = [
+    "http://localhost:5104/api/employee/all",
+    "http://localhost:5008/api/characters",
+  ];
+
+  const fetchUrls = async () => {
+    for (const url of urls) {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch from ${url}`);
+        }
+        const data = await response.json();
+        console.log(`Data from ${url}:`, data);
+      } catch (error) {
+        console.error(`Error fetching from ${url}:`, error);
+      }
+    }
+  };
+
   return (
     <>
       <section id="center">
@@ -13,6 +34,11 @@ function App() {
           <img src={heroImg} className="base" width="170" height="179" alt="" />
           <img src={reactLogo} className="framework" alt="React logo" />
           <img src={viteLogo} className="vite" alt="Vite logo" />
+        </div>
+        <div className="">
+          {/* Btns to fetch data from the APIs
+           */}
+          <button onClick={fetchUrls}>Fetch Data</button>
         </div>
         <div>
           <h1>Get started</h1>
