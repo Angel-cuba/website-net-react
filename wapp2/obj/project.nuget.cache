@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "8mq0CvZmJR8=",
+  "dgSpecHash": "I3O0GA2I5jM=",
   "success": true,
-  "projectFilePath": "/Users/developer/net/wapp2/wapp2.csproj",
+  "projectFilePath": "/Users/developer/net/full-net-react-app/wapp2/wapp2.csproj",
   "expectedPackageFiles": [
     "/Users/developer/.nuget/packages/dapper/2.1.79/dapper.2.1.79.nupkg.sha512",
     "/Users/developer/.nuget/packages/microsoft.aspnetcore.openapi/10.0.11/microsoft.aspnetcore.openapi.10.0.11.nupkg.sha512",

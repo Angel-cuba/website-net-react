@@ -884,11 +884,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/developer/net/wapp2/wapp2.csproj",
+      "projectUniqueName": "/Users/developer/net/full-net-react-app/wapp2/wapp2.csproj",
       "projectName": "wapp2",
-      "projectPath": "/Users/developer/net/wapp2/wapp2.csproj",
+      "projectPath": "/Users/developer/net/full-net-react-app/wapp2/wapp2.csproj",
       "packagesPath": "/Users/developer/.nuget/packages/",
-      "outputPath": "/Users/developer/net/wapp2/obj/",
+      "outputPath": "/Users/developer/net/full-net-react-app/wapp2/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/Users/developer/.nuget/NuGet/NuGet.Config"
