@@ -1,0 +1,40 @@
+# Secrets
+.env
+.env.*
+appsettings.Local.json
+appsettings.Production.json
+secrets.json
+*.pfx
+*.pem
+*.key
+*.crt
+
+# .NET
+bin/
+obj/
+.vs/
+TestResults/
+*.user
+*.suo
+*.cache
+
+# React / Node
+node_modules/
+dist/
+build/
+.vite/
+
+# Database / backups
+*.db
+*.sqlite
+*.bak
+*.dump
+*.mdf
+*.ldf
+
+# IDE / tools
+.qodo/
+.cursor/
+.aider*
+.idea/
+.vscode/
