@@ -35,11 +35,10 @@ if (app.Environment.IsDevelopment())
 }
 
 
-app.UseHttpsRedirection();
 app.UseCors("FrontendLocal");
 
+app.UseHttpsRedirection();
 app.UseAuthorization();
-
 app.MapControllers();
 
-app.Run("http://localhost:5008");
+app.Run();

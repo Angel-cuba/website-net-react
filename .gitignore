@@ -1,6 +1,7 @@
 # Secrets
 .env
 .env.*
+!.env.example
 appsettings.Local.json
 appsettings.Production.json
 secrets.json

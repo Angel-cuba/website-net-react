@@ -2,15 +2,13 @@ import { useState } from "react";
 import heroImg from "./assets/hero.png";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "./assets/vite.svg";
+import { endpoints } from "./api/config";
 import "./App.css";
 
 function App() {
   const [count, setCount] = useState(0);
 
-  const urls = [
-    "http://localhost:5104/api/employee/all",
-    "http://localhost:5008/api/characters",
-  ];
+  const urls = [endpoints.employees, endpoints.characters];
 
   const fetchUrls = async () => {
     for (const url of urls) {
