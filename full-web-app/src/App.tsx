@@ -2,28 +2,11 @@ import { useState } from "react";
 import heroImg from "./assets/hero.png";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "./assets/vite.svg";
-import { endpoints } from "./api/config";
+import { fetchAll } from "./api/config";
 import "./App.css";
 
 function App() {
   const [count, setCount] = useState(0);
-
-  const urls = [endpoints.employees, endpoints.characters];
-
-  const fetchUrls = async () => {
-    for (const url of urls) {
-      try {
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch from ${url}`);
-        }
-        const data = await response.json();
-        console.log(`Data from ${url}:`, data);
-      } catch (error) {
-        console.error(`Error fetching from ${url}:`, error);
-      }
-    }
-  };
 
   return (
     <>
@@ -36,7 +19,7 @@ function App() {
         <div className="">
           {/* Btns to fetch data from the APIs
            */}
-          <button onClick={fetchUrls}>Fetch Data</button>
+          <button onClick={() => fetchAll("all")}>Fetch Data</button>
         </div>
         <div>
           <h1>Get started</h1>

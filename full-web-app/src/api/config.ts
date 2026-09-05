@@ -7,23 +7,26 @@
 function requireEnv(name: string, value: string | undefined): string {
   if (!value) {
     throw new Error(
-      `Missing environment variable ${name}. Copy .env.example to .env.local and set it.`
+      `Missing environment variable ${name}. Copy .env.example to .env.local and set it.`,
     );
   }
   return value.replace(/\/+$/, "");
 }
 
-const employeesApi = requireEnv(
+export const employeesApiUrl = requireEnv(
   "VITE_EMPLOYEES_API_URL",
-  import.meta.env.VITE_EMPLOYEES_API_URL
+  import.meta.env.VITE_EMPLOYEES_API_URL,
 );
-
-const charactersApi = requireEnv(
-  "VITE_CHARACTERS_API_URL",
-  import.meta.env.VITE_CHARACTERS_API_URL
-);
-
-export const endpoints = {
-  employees: `${employeesApi}/api/employee/all`,
-  characters: `${charactersApi}/api/characters`,
+export const fetchAll = async (urlString: string) => {
+  try {
+    const response = await fetch(employeesApiUrl + "/" + urlString);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch from ${urlString}`);
+    }
+    const data = await response.json();
+    console.log(`Data from ${urlString}:`, data);
+    return data;
+  } catch (error) {
+    console.error(`Error fetching from ${urlString}:`, error);
+  }
 };
