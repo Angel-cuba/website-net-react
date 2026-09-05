@@ -1,14 +1,18 @@
-using EmployeeManagementApi.Repositories;
-using EmployeeManagementApi.services;
-using EmployeeManagementApi.services.interfaces;
+using Tasks.Repositories;
+using Tasks.Services;
+using Tasks.Interfaces;
+using Wapp2.Shared.Database;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
 
-builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
-builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+builder.Services.AddScoped<ITaskRepository, TaskRepository>();
+builder.Services.AddScoped<ITaskService, TaskService>();
+
+// Add database connection factory
+builder.Services.AddScoped<ISqlConnectionFactory, SqlConnectionFactory>();
 
 // Enable CORS
 builder.Services.AddCors(options =>
