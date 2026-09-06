@@ -30,8 +30,16 @@ namespace Wapp2.Auth.Services
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password)
             };
 
-            var createdUser = await userRepository.CreateUser(user);
-            var token = jwtService.GenerateToken(createdUser.Id, createdUser.Email, Array.Empty<string>());
+            var firstName = request.Email.Split('@')[0];
+
+            var createdUser = await userRepository.CreateUserWithProfileAndRole(
+                user,
+                firstName,
+                "User"
+            );
+
+            var roles = await userRepository.GetRolesByUserId(createdUser.Id);
+            var token = jwtService.GenerateToken(createdUser.Id, createdUser.Email, roles);
 
             return new AuthResponse { Token = token };
         }
@@ -43,7 +51,8 @@ namespace Wapp2.Auth.Services
             {
                 throw new UnauthorizedAccessException("Invalid credentials.");
             }
-            var token = jwtService.GenerateToken(user.Id, user.Email, Array.Empty<string>());
+            var roles = await userRepository.GetRolesByUserId(user.Id);
+            var token = jwtService.GenerateToken(user.Id, user.Email, roles);
             return new AuthResponse { Token = token };
         }
     }

@@ -1,4 +1,5 @@
 using Dapper;
+using Microsoft.Data.SqlClient;
 using Wapp2.Users.Models;
 using Wapp2.Shared.Database;
 using Wapp2.Users.Interfaces;
@@ -12,30 +13,94 @@ namespace Wapp2.Users.Repositories
             using var db = sqlConnectionFactory.CreateConnection();
             return await db.QueryAsync<UserModel>("SELECT * FROM dbo.Users");
         }
+
         public async Task<UserModel?> GetUser(int id)
         {
             using var db = sqlConnectionFactory.CreateConnection();
             return await db.QueryFirstOrDefaultAsync<UserModel>("SELECT * FROM dbo.Users WHERE Id = @Id", new { Id = id });
         }
+
         public async Task<UserModel?> GetUserByEmail(string email)
         {
             using var db = sqlConnectionFactory.CreateConnection();
             return await db.QueryFirstOrDefaultAsync<UserModel>("SELECT * FROM dbo.Users WHERE Email = @Email", new { Email = email });
         }
-        public async Task<UserModel> CreateUser(UserModel user)
+
+        public async Task<IEnumerable<string>> GetRolesByUserId(int userId)
         {
             using var db = sqlConnectionFactory.CreateConnection();
-            var id = await db.QuerySingleAsync<int>(
-                """
-                INSERT INTO dbo.Users (Email, PasswordHash)
-                OUTPUT INSERTED.Id
-                VALUES (@Email, @PasswordHash)
-                """,
-                user
-            );
 
-            user.Id = id;
-            return user;
+            return await db.QueryAsync<string>(
+                """
+                SELECT r.Name
+                FROM dbo.UserRoles ur
+                INNER JOIN dbo.Roles r ON r.Id = ur.RoleId
+                WHERE ur.UserId = @UserId
+                """,
+                new { UserId = userId }
+            );
+        }
+        public async Task<UserModel> CreateUserWithProfileAndRole(
+            UserModel user,
+            string firstName,
+            string defaultRoleName
+        )
+        {
+            using var db = (SqlConnection)sqlConnectionFactory.CreateConnection();
+            await db.OpenAsync();
+
+            using var transaction = await db.BeginTransactionAsync();
+
+            try
+            {
+                var userId = await db.QuerySingleAsync<int>(
+                    """
+                    INSERT INTO dbo.Users (Email, PasswordHash)
+                    OUTPUT INSERTED.Id
+                    VALUES (@Email, @PasswordHash)
+                    """,
+                    user,
+                    transaction
+                );
+
+                await db.ExecuteAsync(
+                    """
+                    INSERT INTO dbo.UserProfiles (UserId, FirstName, LastName, AvatarUrl, Bio)
+                    VALUES (@UserId, @FirstName, NULL, NULL, NULL)
+                    """,
+                    new { UserId = userId, FirstName = firstName },
+                    transaction
+                );
+
+                var roleId = await db.QuerySingleAsync<int>(
+                    """
+                    SELECT Id
+                    FROM dbo.Roles
+                    WHERE Name = @DefaultRoleName
+                    """,
+                    new { DefaultRoleName = defaultRoleName },
+                    transaction
+                );
+
+                await db.ExecuteAsync(
+                    """
+                    INSERT INTO dbo.UserRoles (UserId, RoleId)
+                    VALUES (@UserId, @RoleId)
+                    """,
+                    new { UserId = userId, RoleId = roleId },
+                    transaction
+                );
+
+                await transaction.CommitAsync();
+
+                user.Id = userId;
+                return user;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
         public async Task<UserModel> UpdateUser(UserModel user)
         {

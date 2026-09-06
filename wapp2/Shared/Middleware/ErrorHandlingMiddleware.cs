@@ -1,10 +1,11 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.Data.SqlClient;
 using Wapp2.Shared.DTOs;
 
 namespace Wapp2.Shared.Middleware;
 
-public class ErrorHandlingMiddleware(RequestDelegate next)
+public class ErrorHandlingMiddleware(RequestDelegate next, IWebHostEnvironment environment)
 {
     public async Task InvokeAsync(HttpContext context)
     {
@@ -24,12 +25,24 @@ public class ErrorHandlingMiddleware(RequestDelegate next)
         {
             await WriteErrorResponse(context, HttpStatusCode.NotFound, ex.Message);
         }
+        catch (SqlException ex)
+        {
+            var message = environment.IsDevelopment()
+                ? ex.Message
+                : "A database error occurred.";
+
+            await WriteErrorResponse(context, HttpStatusCode.InternalServerError, message);
+        }
         catch (Exception)
         {
+            var message = environment.IsDevelopment()
+                ? "An unexpected error occurred while processing the request."
+                : "An unexpected error occurred.";
+
             await WriteErrorResponse(
                 context,
                 HttpStatusCode.InternalServerError,
-                "An unexpected error occurred."
+                message
             );
         }
     }

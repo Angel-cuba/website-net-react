@@ -23,5 +23,12 @@ namespace Wapp2.Auth.Controllers
 
             return Ok(ApiResponse<AuthResponse>.Ok(response, "User registered successfully."));
         }
+
+        [HttpPost("login")]
+        public async Task<ActionResult<ApiResponse<AuthResponse>>> Login(LoginRequest request)
+        {
+            var response = await _authService.Login(request);
+            return Ok(ApiResponse<AuthResponse>.Ok(response, "User logged in successfully."));
+        }
     }
 }
