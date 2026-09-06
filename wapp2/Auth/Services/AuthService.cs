@@ -1,7 +1,9 @@
+using System.Net;
 using Wapp2.Auth.Interfaces;
 using Wapp2.Auth.DTOs;
 using Wapp2.Users.Interfaces;
 using Wapp2.Users.Models;
+using Wapp2.Shared.Middleware;
 
 namespace Wapp2.Auth.Services
 {
@@ -21,7 +23,7 @@ namespace Wapp2.Auth.Services
             var existingUser = await userRepository.GetUserByEmail(request.Email);
             if (existingUser != null)
             {
-                throw new InvalidOperationException("User already exists.");
+                throw new ErrorHandlingMiddlewareException("User already exists.", HttpStatusCode.Conflict);
             }
 
             var user = new UserModel
@@ -49,7 +51,7 @@ namespace Wapp2.Auth.Services
             var user = await userRepository.GetUserByEmail(request.Email);
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             {
-                throw new UnauthorizedAccessException("Invalid credentials.");
+                throw new ErrorHandlingMiddlewareException("Invalid email or password.", HttpStatusCode.Unauthorized);
             }
             var roles = await userRepository.GetRolesByUserId(user.Id);
             var token = jwtService.GenerateToken(user.Id, user.Email, roles);

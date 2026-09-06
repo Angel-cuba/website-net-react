@@ -13,39 +13,39 @@ namespace Tasks.Services
             _repository = repository;
         }
 
-        public async Task<IEnumerable<TaskModel>> GetTasks()
+        public async Task<IEnumerable<TaskModel>> GetTasks(int ownerUserId)
         {
-            return await _repository.GetTasks();
+            return await _repository.GetTasks(ownerUserId);
         }
 
-        public async Task<TaskModel?> GetTask(int id)
+        public async Task<TaskModel?> GetTask(int id, int ownerUserId)
         {
-            return await _repository.GetTask(id);
-        }
-        public async Task<TaskModel> CreateTask(TaskModel taskModel)
-        {
-            return await _repository.CreateTask(taskModel  );
+            return await _repository.GetTask(id, ownerUserId);
         }
 
-        public async Task<TaskModel> UpdateTask(TaskModel taskModel)
+        public async Task<TaskModel> CreateTask(TaskModel taskModel, int ownerUserId)
         {
-            // Check if the task exists before updating
-            var existingTask = await _repository.GetTask(taskModel.Id);
+            return await _repository.CreateTask(taskModel, ownerUserId);
+        }
+
+        public async Task<TaskModel> UpdateTask(TaskModel taskModel, int ownerUserId)
+        {
+            var existingTask = await _repository.GetTask(taskModel.Id, ownerUserId);
             if (existingTask == null)
             {
                 throw new KeyNotFoundException($"Task with Id {taskModel.Id} not found.");
             }
-            return await _repository.UpdateTask(taskModel);
+            return await _repository.UpdateTask(taskModel, ownerUserId);
         }
 
-        public async Task DeleteTask(int id)
+        public async Task DeleteTask(int id, int ownerUserId)
         {
-            var existingTask = await _repository.GetTask(id);
+            var existingTask = await _repository.GetTask(id, ownerUserId);
             if (existingTask == null)
             {
                 throw new KeyNotFoundException($"Task with Id {id} not found.");
             }
-            await _repository.DeleteTask(id);
+            await _repository.DeleteTask(id, ownerUserId);
         }
     }
 }

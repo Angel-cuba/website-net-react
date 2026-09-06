@@ -13,6 +13,10 @@ public class ErrorHandlingMiddleware(RequestDelegate next, IWebHostEnvironment e
         {
             await next(context);
         }
+        catch (ErrorHandlingMiddlewareException ex)
+        {
+            await WriteErrorResponse(context, ex.StatusCode, ex.Message);
+        }
         catch (InvalidOperationException ex)
         {
             await WriteErrorResponse(context, HttpStatusCode.Conflict, ex.Message);

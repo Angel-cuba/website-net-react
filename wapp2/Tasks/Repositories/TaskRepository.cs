@@ -8,22 +8,29 @@ namespace Tasks.Repositories
     {
         private readonly ISqlConnectionFactory _sqlConnectionFactory = sqlConnectionFactory;
 
-        public async Task<TaskModel?> GetTask(int id)
+        public async Task<TaskModel?> GetTask(int id, int ownerUserId)
         {
             using var db = _sqlConnectionFactory.CreateConnection();
-            return await db.QueryFirstOrDefaultAsync<TaskModel>("SELECT * FROM dbo.Tasks WHERE Id = @Id", new { Id = id });
+            return await db.QueryFirstOrDefaultAsync<TaskModel>(
+                "SELECT * FROM dbo.Tasks WHERE Id = @Id AND OwnerUserId = @OwnerUserId",
+                new { Id = id, OwnerUserId = ownerUserId }
+            );
         }
 
-        public async Task<IEnumerable<TaskModel>> GetTasks()
+        public async Task<IEnumerable<TaskModel>> GetTasks(int ownerUserId)
         {
-
             using var db = _sqlConnectionFactory.CreateConnection();
-            return await db.QueryAsync<TaskModel>("SELECT * FROM dbo.Tasks");
+            return await db.QueryAsync<TaskModel>(
+                "SELECT * FROM dbo.Tasks WHERE OwnerUserId = @OwnerUserId ORDER BY CreatedAt DESC",
+                new { OwnerUserId = ownerUserId }
+            );
         }
 
-        public async Task<TaskModel> CreateTask(TaskModel task)
+        public async Task<TaskModel> CreateTask(TaskModel task, int ownerUserId)
         {
             using var db = _sqlConnectionFactory.CreateConnection();
+            task.OwnerUserId = ownerUserId;
+
             var id = await db.QuerySingleAsync<int>(
                 """
                 INSERT INTO dbo.Tasks
@@ -38,7 +45,8 @@ namespace Tasks.Repositories
             task.Id = id;
             return task;
         }
-        public async Task<TaskModel> UpdateTask(TaskModel task)
+
+        public async Task<TaskModel> UpdateTask(TaskModel task, int ownerUserId)
         {
             using var db = _sqlConnectionFactory.CreateConnection();
             await db.ExecuteAsync(
@@ -47,23 +55,38 @@ namespace Tasks.Repositories
                 SET Title = @Title,
                     Category = @Category,
                     Description = @Description,
-                    OwnerUserId = @OwnerUserId,
                     DueDate = @DueDate,
                     IsCompleted = @IsCompleted,
                     Priority = @Priority,
                     Status = @Status,
                     UpdatedAt = SYSUTCDATETIME()
-                WHERE Id = @Id
+                WHERE Id = @Id AND OwnerUserId = @OwnerUserId
                 """,
-                task
+                new
+                {
+                    task.Id,
+                    task.Title,
+                    task.Category,
+                    task.Description,
+                    task.DueDate,
+                    task.IsCompleted,
+                    task.Priority,
+                    task.Status,
+                    OwnerUserId = ownerUserId
+                }
             );
+            task.OwnerUserId = ownerUserId;
+
             return task;
         }
 
-        public async Task DeleteTask(int id)
+        public async Task DeleteTask(int id, int ownerUserId)
         {
             using var db = _sqlConnectionFactory.CreateConnection();
-            await db.ExecuteAsync("DELETE FROM dbo.Tasks WHERE Id = @Id", new { Id = id });
+            await db.ExecuteAsync(
+                "DELETE FROM dbo.Tasks WHERE Id = @Id AND OwnerUserId = @OwnerUserId",
+                new { Id = id, OwnerUserId = ownerUserId }
+            );
         }
     }
 }
