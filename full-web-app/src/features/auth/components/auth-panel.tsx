@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { FormEvent } from "react";
+import { LogIn, UserPlus } from "lucide-react";
 import { Button } from "../../../components/button";
 import { getErrorMessage } from "../../../utils/errors";
 import { login, register } from "../api/auth-api";
@@ -7,27 +8,25 @@ import { useAuth } from "../hooks/use-auth";
 import type { AuthMode } from "../types/auth";
 
 export function AuthPanel() {
-  const { authenticate, isAuthenticated, logout, token } = useAuth();
+  const {
+    authenticate,
+    beginAuthentication,
+    clearAuthFeedback,
+    error,
+    failAuthentication,
+    status,
+  } = useAuth();
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
-  const tokenPreview = useMemo(() => {
-    if (!token) {
-      return "No token stored";
-    }
-
-    return `${token.slice(0, 18)}...${token.slice(-12)}`;
-  }, [token]);
+  const isLoading = status === "authenticating";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError("");
+    clearAuthFeedback();
     setMessage("");
-    setIsLoading(true);
+    beginAuthentication();
 
     try {
       const credentials = { email, password };
@@ -42,30 +41,26 @@ export function AuthPanel() {
       setPassword("");
       setMessage(response.message);
     } catch (caughtError) {
-      setError(getErrorMessage(caughtError));
-    } finally {
-      setIsLoading(false);
+      failAuthentication(getErrorMessage(caughtError));
     }
   }
 
   function changeMode(nextMode: AuthMode) {
     setMode(nextMode);
     setMessage("");
-    setError("");
-  }
-
-  function handleLogout() {
-    logout();
-    setMessage("Logged out.");
-    setError("");
+    clearAuthFeedback();
   }
 
   return (
-    <aside className="auth-panel">
-      <div className="section-header">
-        <h2>Session</h2>
-        <div className="segmented-control" aria-label="Authentication mode">
+    <section aria-labelledby="auth-heading" className="auth-panel">
+      <div className="auth-heading">
+        <p className="eyebrow">Private workspace</p>
+        <h1 id="auth-heading">Welcome to Wapp2</h1>
+      </div>
+
+      <div className="segmented-control" aria-label="Authentication mode" role="group">
           <Button
+            aria-pressed={mode === "login"}
             className={mode === "login" ? "is-active" : ""}
             onClick={() => changeMode("login")}
             type="button"
@@ -73,35 +68,43 @@ export function AuthPanel() {
             Login
           </Button>
           <Button
+            aria-pressed={mode === "register"}
             className={mode === "register" ? "is-active" : ""}
             onClick={() => changeMode("register")}
             type="button"
           >
             Register
           </Button>
-        </div>
       </div>
 
-      <form className="stack" onSubmit={handleSubmit}>
-        <label>
+      <form aria-busy={isLoading} className="auth-form" onSubmit={handleSubmit}>
+        <label htmlFor="auth-email">
           Email
           <input
             autoComplete="email"
+            id="auth-email"
             name="email"
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              if (status === "error") clearAuthFeedback();
+            }}
             required
             type="email"
             value={email}
           />
         </label>
 
-        <label>
+        <label htmlFor="auth-password">
           Password
           <input
             autoComplete={mode === "login" ? "current-password" : "new-password"}
+            id="auth-password"
             minLength={6}
             name="password"
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              if (status === "error") clearAuthFeedback();
+            }}
             required
             type="password"
             value={password}
@@ -109,29 +112,18 @@ export function AuthPanel() {
         </label>
 
         <Button disabled={isLoading} type="submit" variant="primary">
-          {isLoading ? "Working..." : mode === "login" ? "Login" : "Create user"}
+          {mode === "login" ? <LogIn aria-hidden="true" /> : <UserPlus aria-hidden="true" />}
+          {isLoading ? "Please wait" : mode === "login" ? "Login" : "Create account"}
         </Button>
       </form>
 
-      <div className="token-box">
-        <span>Token</span>
-        <code>{tokenPreview}</code>
+      <div aria-atomic="true" aria-live="polite" className="auth-feedback">
+        {status === "expired" && (
+          <p className="notice is-warning" role="status">Your session expired. Please log in again.</p>
+        )}
+        {message && <p className="notice is-success">{message}</p>}
+        {error && <p className="notice is-error" role="alert">{error}</p>}
       </div>
-
-      <Button className="logout-button" disabled={!isAuthenticated} onClick={handleLogout}>
-        Logout
-      </Button>
-
-      {message && (
-        <p aria-live="polite" className="notice is-success">
-          {message}
-        </p>
-      )}
-      {error && (
-        <p aria-live="assertive" className="notice is-error" role="alert">
-          {error}
-        </p>
-      )}
-    </aside>
+    </section>
   );
 }

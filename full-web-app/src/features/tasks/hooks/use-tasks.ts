@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../auth";
+import { ApiError } from "../../../lib/http-client";
 import { getErrorMessage } from "../../../utils/errors";
 import {
   createTask as createTaskRequest,
@@ -11,31 +12,42 @@ import type { TaskItem, TaskPayload } from "../types/task";
 import { normalizeTaskPayload } from "../utils/task-payload";
 
 export function useTasks() {
-  const { token } = useAuth();
+  const { expireSession, isAuthenticated } = useAuth();
   const [tasks, setTasks] = useState<TaskItem[]>([]);
-  const [message, setMessage] = useState("Ready to test the API.");
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(Boolean(token));
+  const [isLoading, setIsLoading] = useState(isAuthenticated);
+
+  const handleRequestError = useCallback(
+    (caughtError: unknown) => {
+      if (caughtError instanceof ApiError && caughtError.status === 401) {
+        expireSession();
+        return;
+      }
+
+      setError(getErrorMessage(caughtError));
+    },
+    [expireSession],
+  );
 
   useEffect(() => {
-    if (!token) {
+    if (!isAuthenticated) {
       return;
     }
 
     let isCancelled = false;
 
-    void getTasks(token)
+    void getTasks()
       .then((nextTasks) => {
         if (isCancelled) {
           return;
         }
 
         setTasks(nextTasks);
-        setMessage(`Loaded ${nextTasks.length} task${nextTasks.length === 1 ? "" : "s"}.`);
       })
       .catch((caughtError: unknown) => {
         if (!isCancelled) {
-          setError(getErrorMessage(caughtError));
+          handleRequestError(caughtError);
         }
       })
       .finally(() => {
@@ -47,40 +59,50 @@ export function useTasks() {
     return () => {
       isCancelled = true;
     };
-  }, [token]);
+  }, [handleRequestError, isAuthenticated]);
 
   async function refreshTasks() {
-    if (!token) {
+    if (!isAuthenticated) {
       return;
     }
 
     await runTaskAction(async () => {
-      const nextTasks = await getTasks(token);
+      const nextTasks = await getTasks();
       setTasks(nextTasks);
       setMessage(`Loaded ${nextTasks.length} task${nextTasks.length === 1 ? "" : "s"}.`);
     });
   }
 
   async function createTask(payload: TaskPayload): Promise<boolean> {
-    if (!token) {
+    if (!isAuthenticated) {
       setError("Login is required before creating tasks.");
       return false;
     }
 
-    let succeeded = false;
-
-    await runTaskAction(async () => {
-      const createdTask = await createTaskRequest(normalizeTaskPayload(payload), token);
+    return runTaskAction(async () => {
+      const createdTask = await createTaskRequest(normalizeTaskPayload(payload));
       setTasks((currentTasks) => [createdTask, ...currentTasks]);
-      setMessage(`Created task #${createdTask.id}.`);
-      succeeded = true;
+      setMessage(`Task “${createdTask.title}” created.`);
     });
+  }
 
-    return succeeded;
+  async function saveTask(taskId: number, payload: TaskPayload): Promise<boolean> {
+    if (!isAuthenticated) {
+      setError("Login is required before updating tasks.");
+      return false;
+    }
+
+    return runTaskAction(async () => {
+      const updatedTask = await updateTask(taskId, normalizeTaskPayload(payload));
+      setTasks((currentTasks) =>
+        currentTasks.map((task) => (task.id === updatedTask.id ? updatedTask : task)),
+      );
+      setMessage(`Task “${updatedTask.title}” saved.`);
+    });
   }
 
   async function toggleTask(task: TaskItem) {
-    if (!token) {
+    if (!isAuthenticated) {
       setError("Login is required before updating tasks.");
       return;
     }
@@ -97,38 +119,43 @@ export function useTasks() {
           priority: task.priority ?? "Medium",
           status: !task.isCompleted ? "completed" : "pending",
         }),
-        token,
       );
 
       setTasks((currentTasks) =>
         currentTasks.map((item) => (item.id === updatedTask.id ? updatedTask : item)),
       );
-      setMessage(`Updated task #${updatedTask.id}.`);
+      setMessage(
+        updatedTask.isCompleted
+          ? `Task “${updatedTask.title}” completed.`
+          : `Task “${updatedTask.title}” reopened.`,
+      );
     });
   }
 
-  async function removeTask(taskId: number) {
-    if (!token) {
+  async function removeTask(taskId: number): Promise<boolean> {
+    if (!isAuthenticated) {
       setError("Login is required before deleting tasks.");
-      return;
+      return false;
     }
 
-    await runTaskAction(async () => {
-      await deleteTaskRequest(taskId, token);
+    return runTaskAction(async () => {
+      await deleteTaskRequest(taskId);
       setTasks((currentTasks) => currentTasks.filter((task) => task.id !== taskId));
-      setMessage(`Deleted task #${taskId}.`);
+      setMessage("Task deleted.");
     });
   }
 
-  async function runTaskAction(action: () => Promise<void>) {
+  async function runTaskAction(action: () => Promise<void>): Promise<boolean> {
     setError("");
     setMessage("");
     setIsLoading(true);
 
     try {
       await action();
+      return true;
     } catch (caughtError) {
-      setError(getErrorMessage(caughtError));
+      handleRequestError(caughtError);
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -141,6 +168,7 @@ export function useTasks() {
     isLoading,
     refreshTasks,
     createTask,
+    saveTask,
     toggleTask,
     removeTask,
   };

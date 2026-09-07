@@ -1,64 +1,53 @@
-import { Button } from "../../../components/button";
-import { formatDate } from "../../../utils/date";
+import { ClipboardList } from "lucide-react";
+import { EmptyState } from "../../../components/empty-state";
 import type { TaskItem } from "../types/task";
+import { TaskCard } from "./task-card";
 
 type TaskListProps = {
-  isAuthenticated: boolean;
   isLoading: boolean;
   tasks: TaskItem[];
-  onDelete: (taskId: number) => Promise<void>;
+  onDelete: (taskId: number) => Promise<boolean>;
+  onEdit: (taskId: number) => void;
   onToggle: (task: TaskItem) => Promise<void>;
 };
 
 export function TaskList({
-  isAuthenticated,
   isLoading,
   tasks,
   onDelete,
+  onEdit,
   onToggle,
 }: TaskListProps) {
-  return (
-    <div className="task-list">
-      {tasks.map((task) => (
-        <article className="task-item" key={task.id}>
-          <div>
-            <div className="task-title-row">
-              <h3>{task.title}</h3>
-              <span>{task.priority ?? "No priority"}</span>
-            </div>
-            <p>{task.description || "No description."}</p>
-            <div className="task-meta">
-              <span>{task.category || "Uncategorized"}</span>
-              <span>{task.status}</span>
-              <span>{formatDate(task.dueDate)}</span>
-            </div>
-          </div>
-          <div className="task-actions">
-            <label className="checkbox-field">
-              <input
-                checked={task.isCompleted}
-                disabled={isLoading}
-                onChange={() => void onToggle(task)}
-                type="checkbox"
-              />
-              Done
-            </label>
-            <Button
-              disabled={isLoading}
-              onClick={() => void onDelete(task.id)}
-              type="button"
-              variant="danger"
-            >
-              Delete
-            </Button>
-          </div>
-        </article>
-      ))}
+  if (isLoading && tasks.length === 0) {
+    return (
+      <div aria-label="Loading tasks" className="task-list" role="status">
+        {[0, 1, 2].map((item) => <div className="task-skeleton" key={item} />)}
+      </div>
+    );
+  }
 
-      {isAuthenticated && tasks.length === 0 && (
-        <div className="empty-state">No tasks yet for this user.</div>
-      )}
-      {!isAuthenticated && <div className="empty-state">Login to create and load tasks.</div>}
+  if (tasks.length === 0) {
+    return (
+      <EmptyState
+        description="Create your first task above."
+        icon={<ClipboardList aria-hidden="true" />}
+        title="No tasks yet"
+      />
+    );
+  }
+
+  return (
+    <div aria-busy={isLoading} className="task-list">
+      {tasks.map((task) => (
+        <TaskCard
+          disabled={isLoading}
+          key={task.id}
+          onDelete={onDelete}
+          onEdit={onEdit}
+          onToggle={onToggle}
+          task={task}
+        />
+      ))}
     </div>
   );
 }

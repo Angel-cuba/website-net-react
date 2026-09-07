@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes } from "react";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "default" | "primary" | "danger";
+  variant?: "default" | "primary" | "danger" | "ghost";
 };
 
 export function Button({ className = "", variant = "default", ...props }: ButtonProps) {

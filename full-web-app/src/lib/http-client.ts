@@ -1,5 +1,15 @@
 import { env } from "../config/env";
 
+export class ApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 export async function apiRequest<T>(
   path: string,
   options: RequestInit = {},
@@ -21,7 +31,7 @@ export async function apiRequest<T>(
   const body = await parseResponseBody(response);
 
   if (!response.ok) {
-    throw new Error(getResponseMessage(body, response.status));
+    throw new ApiError(getResponseMessage(body, response.status), response.status);
   }
 
   return body as T;

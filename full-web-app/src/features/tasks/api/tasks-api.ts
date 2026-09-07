@@ -1,38 +1,35 @@
-import { apiRequest } from "../../../lib/http-client";
+import { authenticatedRequest } from "../../auth/api/authenticated-request";
 import type { TaskItem, TaskPayload } from "../types/task";
 
-export function getTasks(token: string) {
-  return apiRequest<TaskItem[]>("/api/tasks/all", {}, token);
+export function getTasks() {
+  return authenticatedRequest<TaskItem[]>("/api/tasks/all");
 }
 
-export function createTask(payload: TaskPayload, token: string) {
-  return apiRequest<TaskItem>(
+export function createTask(payload: TaskPayload) {
+  return authenticatedRequest<TaskItem>(
     "/api/tasks/create",
     {
       method: "POST",
       body: JSON.stringify(payload),
     },
-    token,
   );
 }
 
-export function updateTask(id: number, payload: TaskPayload, token: string) {
-  return apiRequest<TaskItem>(
+export function updateTask(id: number, payload: TaskPayload) {
+  return authenticatedRequest<TaskItem>(
     `/api/tasks/${id}`,
     {
       method: "PUT",
       body: JSON.stringify(payload),
     },
-    token,
   );
 }
 
-export function deleteTask(id: number, token: string) {
-  return apiRequest<void>(
+export function deleteTask(id: number) {
+  return authenticatedRequest<void>(
     `/api/tasks/${id}`,
     {
       method: "DELETE",
     },
-    token,
   );
 }
