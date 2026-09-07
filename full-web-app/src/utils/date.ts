@@ -25,3 +25,12 @@ export function toDateTimeInputValue(value: string | null): string {
   const offset = date.getTimezoneOffset();
   return new Date(date.getTime() - offset * 60_000).toISOString().slice(0, 16);
 }
+
+const minimumDueDateOffsetMs = 5 * 60 * 60 * 1000;
+
+export function getMinimumDueDateInputValue(referenceDate = new Date()): string {
+  const minimumDueDate = new Date(referenceDate.getTime() + minimumDueDateOffsetMs);
+  minimumDueDate.setSeconds(0, 0);
+  minimumDueDate.setMinutes(minimumDueDate.getMinutes() + 1);
+  return toDateTimeInputValue(minimumDueDate.toISOString());
+}

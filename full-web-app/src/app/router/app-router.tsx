@@ -39,6 +39,17 @@ export function AppRouter() {
     <AppShell activePath={activePath} onNavigate={navigate}>
       {!isAuthenticated ? (
         <div className="guest-workspace">
+          <div aria-hidden="true" className="guest-motion">
+            <span className="guest-motion__lane guest-motion__lane--one">
+              <span />
+            </span>
+            <span className="guest-motion__lane guest-motion__lane--two">
+              <span />
+            </span>
+            <span className="guest-motion__lane guest-motion__lane--three">
+              <span />
+            </span>
+          </div>
           <EmptyState
             description="Sign in to open your private workspace."
             icon={<LockKeyhole aria-hidden="true" />}

@@ -61,6 +61,13 @@ export function useTasks() {
     };
   }, [handleRequestError, isAuthenticated]);
 
+  useEffect(() => {
+    if (!message) return;
+
+    const timer = window.setTimeout(() => setMessage(""), 3_000);
+    return () => window.clearTimeout(timer);
+  }, [message]);
+
   async function refreshTasks() {
     if (!isAuthenticated) {
       return;

@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Plus, Save, X } from "lucide-react";
 import { Button } from "../../../components/button";
-import { toDateTimeInputValue } from "../../../utils/date";
+import { getMinimumDueDateInputValue, toDateTimeInputValue } from "../../../utils/date";
 import type { TaskItem, TaskPayload } from "../types/task";
 
 const createEmptyTaskForm = (): TaskPayload => ({
@@ -43,6 +43,15 @@ export function TaskForm({
         }
       : createEmptyTaskForm(),
   );
+  const [minimumDueDate, setMinimumDueDate] = useState(getMinimumDueDateInputValue);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setMinimumDueDate(getMinimumDueDateInputValue());
+    }, 60_000);
+
+    return () => window.clearInterval(timer);
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -141,11 +150,17 @@ export function TaskForm({
         <label htmlFor="task-due-date">
           Due date
           <input
+            aria-describedby="task-due-date-hint"
             id="task-due-date"
+            min={minimumDueDate}
             onChange={(event) => setForm({ ...form, dueDate: event.target.value })}
+            onFocus={() => setMinimumDueDate(getMinimumDueDateInputValue())}
             type="datetime-local"
             value={form.dueDate ?? ""}
           />
+          <span className="field-hint" id="task-due-date-hint">
+            At least 5 hours from now.
+          </span>
         </label>
 
         <label className="checkbox-field">
