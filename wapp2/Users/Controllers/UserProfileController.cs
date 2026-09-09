@@ -2,39 +2,75 @@ using Wapp2.Users.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wapp2.Shared.Security;
+using Wapp2.Shared.DTOs;
 using Wapp2.Users.DTOs;
 
 namespace Wapp2.Users.Controllers
 {
-    [Route("api/user/profile/")]
+    [Route("api/user/profile")]
     [ApiController]
     [Authorize]
     public class UserProfileController : ControllerBase
     {
-        private readonly IUserProfileRepository userProfileRepository;
-        private readonly ICurrentUserService currentUserService;
+        private readonly IUserProfileService _service;
+        private readonly ICurrentUserService _currentUserService;
 
-
-        [HttpGet("{userId:int}")]
-        public async Task<IActionResult> GetUserProfile(int userId)
+        public UserProfileController(
+            IUserProfileService service,
+            ICurrentUserService currentUserService
+        )
         {
-            var userProfile = await userProfileRepository.GetUserProfile(userId);
-            if (userProfile == null)
-            {
-                return NotFound();
-            }
-            return Ok(userProfile);
-        }  
-        [HttpPut("update")]
-        public async Task<IActionResult> UpdateUserProfile([FromBody] UpdateUserProfileRequest userProfile)
-        {
-            var updatedUserProfile = await userProfileRepository.UpdateUserProfile(userProfile);
-            return Ok(updatedUserProfile);
+            _service = service;
+            _currentUserService = currentUserService;
         }
-        [HttpDelete("{userId:int}")]
-        public async Task<IActionResult> DeleteUserProfile(int userId)
+
+        [HttpGet]
+        public async Task<ActionResult<ApiResponse<UserProfileResponse>>> GetUserProfile()
         {
-            await userProfileRepository.DeleteUserProfile(userId);
+            var profile = await _service.GetUserProfile(_currentUserService.UserId);
+
+            if (profile == null)
+            {
+                return NotFound(ApiResponse<UserProfileResponse>.Fail("Profile not found."));
+            }
+
+            return Ok(ApiResponse<UserProfileResponse>.Ok(
+                profile,
+                "Profile loaded successfully."
+            ));
+        }
+
+        [HttpPut]
+        public async Task<ActionResult<ApiResponse<UserProfileResponse>>> UpdateUserProfile(
+            [FromBody] UpdateUserProfileRequest request
+        )
+        {
+            var profile = await _service.UpdateUserProfile(
+                _currentUserService.UserId,
+                request
+            );
+
+            if (profile == null)
+            {
+                return NotFound(ApiResponse<UserProfileResponse>.Fail("Profile not found."));
+            }
+
+            return Ok(ApiResponse<UserProfileResponse>.Ok(
+                profile,
+                "Profile updated successfully."
+            ));
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> DeleteUserProfile()
+        {
+            var deleted = await _service.DeleteUserProfile(_currentUserService.UserId);
+
+            if (!deleted)
+            {
+                return NotFound(ApiResponse<object>.Fail("Profile not found."));
+            }
+
             return NoContent();
         }
     }

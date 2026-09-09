@@ -10,6 +10,7 @@ using Wapp2.Auth.Interfaces;
 using Wapp2.Auth.Services;
 using Wapp2.Users.Interfaces;
 using Wapp2.Users.Repositories;
+using Wapp2.Users.Services;
 using Wapp2.Shared.Middleware;
 using Wapp2.Shared.Security;
 using Wapp2.Shared.DTOs;
@@ -24,6 +25,8 @@ builder.Services.AddHttpContextAccessor();
 // Add repository and service registrations
 // Add user repository registration
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserProfileRepository, UserProfileRepository>();
+builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 // Task repository
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<ITaskService, TaskService>();
