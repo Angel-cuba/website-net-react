@@ -30,7 +30,10 @@ export function AuthPanel() {
 
     try {
       const credentials = { email, password };
-      const response = mode === "login" ? await login(credentials) : await register(credentials);
+      const response =
+        mode === "login"
+          ? await login(credentials)
+          : await register(credentials);
       const nextToken = response.data?.token;
 
       if (!nextToken) {
@@ -58,23 +61,27 @@ export function AuthPanel() {
         <h1 id="auth-heading">Welcome to Wapp2</h1>
       </div>
 
-      <div className="segmented-control" aria-label="Authentication mode" role="group">
-          <Button
-            aria-pressed={mode === "login"}
-            className={mode === "login" ? "is-active" : ""}
-            onClick={() => changeMode("login")}
-            type="button"
-          >
-            Login
-          </Button>
-          <Button
-            aria-pressed={mode === "register"}
-            className={mode === "register" ? "is-active" : ""}
-            onClick={() => changeMode("register")}
-            type="button"
-          >
-            Register
-          </Button>
+      <div
+        className="segmented-control"
+        aria-label="Authentication mode"
+        role="group"
+      >
+        <Button
+          aria-pressed={mode === "login"}
+          className={mode === "login" ? "is-active" : ""}
+          onClick={() => changeMode("login")}
+          type="button"
+        >
+          Login
+        </Button>
+        <Button
+          aria-pressed={mode === "register"}
+          className={mode === "register" ? "is-active" : ""}
+          onClick={() => changeMode("register")}
+          type="button"
+        >
+          Register
+        </Button>
       </div>
 
       <form aria-busy={isLoading} className="auth-form" onSubmit={handleSubmit}>
@@ -97,7 +104,9 @@ export function AuthPanel() {
         <label htmlFor="auth-password">
           Password
           <input
-            autoComplete={mode === "login" ? "current-password" : "new-password"}
+            autoComplete={
+              mode === "login" ? "current-password" : "new-password"
+            }
             id="auth-password"
             minLength={6}
             name="password"
@@ -112,17 +121,31 @@ export function AuthPanel() {
         </label>
 
         <Button disabled={isLoading} type="submit" variant="primary">
-          {mode === "login" ? <LogIn aria-hidden="true" /> : <UserPlus aria-hidden="true" />}
-          {isLoading ? "Please wait" : mode === "login" ? "Login" : "Create account"}
+          {mode === "login" ? (
+            <LogIn aria-hidden="true" />
+          ) : (
+            <UserPlus aria-hidden="true" />
+          )}
+          {isLoading
+            ? "Please wait"
+            : mode === "login"
+              ? "Login"
+              : "Create account"}
         </Button>
       </form>
 
       <div aria-atomic="true" aria-live="polite" className="auth-feedback">
         {status === "expired" && (
-          <p className="notice is-warning" role="status">Your session expired. Please log in again.</p>
+          <p className="notice is-warning" role="status">
+            Your session expired. Please log in again.
+          </p>
         )}
         {message && <p className="notice is-success">{message}</p>}
-        {error && <p className="notice is-error" role="alert">{error}</p>}
+        {error && (
+          <p className="notice is-error" role="alert">
+            {error}
+          </p>
+        )}
       </div>
     </section>
   );

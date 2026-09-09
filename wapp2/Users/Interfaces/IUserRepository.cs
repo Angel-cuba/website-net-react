@@ -10,6 +10,6 @@ namespace Wapp2.Users.Interfaces
         Task<IEnumerable<UserModel>> GetUsers();
         Task<UserModel> CreateUserWithProfileAndRole(UserModel user, string firstName, string defaultRoleName);
         Task<UserModel> UpdateUser(UserModel user);
-        Task DeleteUser(int id);
+        Task DeleteUserAndRelatedData(int id);
     }
 }

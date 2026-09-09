@@ -108,10 +108,25 @@ namespace Wapp2.Users.Repositories
             await db.ExecuteAsync("UPDATE dbo.Users SET Name = @Name, Email = @Email WHERE Id = @Id", user);
             return user;
         }
-        public async Task DeleteUser(int id)
+        public async Task DeleteUserAndRelatedData(int id)
         {
-            using var db = sqlConnectionFactory.CreateConnection();
-            await db.ExecuteAsync("DELETE FROM dbo.Users WHERE Id = @Id", new { Id = id });
+            using var db = (SqlConnection)sqlConnectionFactory.CreateConnection();
+            await db.OpenAsync();
+
+            using var transaction = await db.BeginTransactionAsync();
+
+            try
+            {
+                await db.ExecuteAsync("DELETE FROM dbo.UserRoles WHERE UserId = @UserId", new { UserId = id }, transaction);
+                await db.ExecuteAsync("DELETE FROM dbo.UserProfiles WHERE UserId = @UserId", new { UserId = id }, transaction);
+                await db.ExecuteAsync("DELETE FROM dbo.Users WHERE Id = @UserId", new { UserId = id }, transaction);
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
     }
 }
