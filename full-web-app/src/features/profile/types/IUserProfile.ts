@@ -1,7 +1,8 @@
 export interface IUserProfile {
-  id?: number;
-  FirstName: string;
-  LastName: string;
-  AvatarUrl: string;
-  Bio: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string;
+  bio: string;
 }
+
+export type UpdateUserProfileRequest = IUserProfile;

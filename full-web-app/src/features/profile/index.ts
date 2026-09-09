@@ -3,4 +3,7 @@ export {
   updateUserProfile,
   deleteUserProfile,
 } from "./api/user-api";
-export type { IUserProfile } from "./types/IUserProfile";
+export type {
+  IUserProfile,
+  UpdateUserProfileRequest,
+} from "./types/IUserProfile";
