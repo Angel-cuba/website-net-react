@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import type { FormEvent } from "react";
 import { useAuth } from "../../auth";
 import { ApiError } from "../../../lib/http-client";
 import { getErrorMessage } from "../../../utils/errors";
 import { updateUserProfile, useProfile } from "../index";
 import type { IUserProfile } from "../index";
 import { UserCard } from "./user-card";
+import { ProfileForm } from "./profile-form";
 
 const emptyProfile: IUserProfile = {
   firstName: "",
@@ -47,8 +47,7 @@ export function ProfilePanel() {
     return () => window.clearTimeout(timer);
   }, [message]);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSubmit() {
     setError("");
     setMessage("");
     setIsSavingProfile(true);
@@ -80,7 +79,14 @@ export function ProfilePanel() {
   function beginEditing() {
     setDraftProfile({ ...(profile ?? emptyProfile) });
     setError("");
+    setMessage("");
     setIsEditing(true);
+  }
+
+  function cancelEditing() {
+    setDraftProfile({ ...(profile ?? emptyProfile) });
+    setError("");
+    setIsEditing(false);
   }
 
   const isBusy = isProfileLoading || isSavingProfile;
@@ -98,59 +104,14 @@ export function ProfilePanel() {
       {isProfileLoading ? (
         <p>Loading profile...</p>
       ) : isEditing ? (
-        <form aria-busy={isBusy} className="auth-form" onSubmit={handleSubmit}>
-          <label className="name" htmlFor="name">
-            <input
-              aria-label="Name"
-              disabled={isBusy}
-              id="name"
-              name="firstName"
-              onChange={(event) => updateField("firstName", event.target.value)}
-              placeholder="Name"
-              type="text"
-              value={draftProfile.firstName}
-            />
-          </label>
-          <label className="name" htmlFor="last-name">
-            <input
-              aria-label="Last Name"
-              disabled={isBusy}
-              id="last-name"
-              name="lastName"
-              onChange={(event) => updateField("lastName", event.target.value)}
-              placeholder="Last Name"
-              type="text"
-              value={draftProfile.lastName}
-            />
-          </label>
-          <label className="name" htmlFor="bio">
-            <input
-              aria-label="Bio"
-              disabled={isBusy}
-              id="bio"
-              name="bio"
-              onChange={(event) => updateField("bio", event.target.value)}
-              placeholder="Bio"
-              type="text"
-              value={draftProfile.bio}
-            />
-          </label>
-          <label className="name" htmlFor="avatar-url">
-            <input
-              aria-label="Avatar URL"
-              disabled={isBusy}
-              id="avatar-url"
-              name="avatarUrl"
-              onChange={(event) => updateField("avatarUrl", event.target.value)}
-              placeholder="Avatar URL"
-              type="url"
-              value={draftProfile.avatarUrl}
-            />
-          </label>
-          <button disabled={isBusy} type="submit">
-            {isSavingProfile ? "Updating profile" : "Update Profile"}
-          </button>
-        </form>
+        <ProfileForm
+          disabled={isBusy}
+          isSaving={isSavingProfile}
+          onCancel={cancelEditing}
+          onChange={updateField}
+          onSubmit={handleSubmit}
+          profile={draftProfile}
+        />
       ) : (
         <UserCard
           email={user?.email ?? "Email not provided"}
