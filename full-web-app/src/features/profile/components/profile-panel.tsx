@@ -1,60 +1,114 @@
+import { useCallback, useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import { UserRound } from "lucide-react";
-import { useState, type FormEvent, useEffect } from "react";
 import { useAuth } from "../../auth";
+import { ApiError } from "../../../lib/http-client";
+import { getErrorMessage } from "../../../utils/errors";
 import { getUserProfile, updateUserProfile } from "../index";
 import type { IUserProfile } from "../index";
-export function ProfilePanel() {
-  const [userProfile, setUserProfile] = useState<IUserProfile>({
-    FirstName: "",
-    LastName: "",
-    AvatarUrl: "",
-    Bio: "",
-  });
-  console.log("🚀 ~ ProfilePanel ~ userProfile:", userProfile);
 
-  const { user } = useAuth();
-  console.log("🚀 ~ ProfilePanel ~ user:", user);
-  const [isLoading, setIsLoading] = useState(false);
-  const [userHasProfile, setUserHasProfile] = useState(false);
+const emptyProfile: IUserProfile = {
+  firstName: "",
+  lastName: "",
+  avatarUrl: "",
+  bio: "",
+};
+
+export function ProfilePanel() {
+  const { expireSession, user } = useAuth();
+  const userId = user?.id;
+  const [userProfile, setUserProfile] = useState<IUserProfile>(emptyProfile);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  const handleRequestError = useCallback(
+    (caughtError: unknown) => {
+      if (caughtError instanceof ApiError && caughtError.status === 401) {
+        expireSession();
+        return;
+      }
+
+      setError(getErrorMessage(caughtError));
+    },
+    [expireSession],
+  );
+
   useEffect(() => {
-    if (user) {
-      getUserProfile().then((response) => {
-        console.log("🚀 ~ ProfilePanel ~ getUserProfile response:", response);
-        if (response.data) {
-          setUserProfile(response.data);
-          setUserHasProfile(true);
+    if (!userId) return;
+
+    let isCancelled = false;
+
+    void getUserProfile()
+      .then((response) => {
+        if (isCancelled) return;
+
+        if (!response.data) {
+          throw new Error("The API did not return profile data.");
+        }
+
+        setUserProfile(normalizeProfile(response.data));
+      })
+      .catch((caughtError: unknown) => {
+        if (!isCancelled) {
+          handleRequestError(caughtError);
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsLoadingProfile(false);
         }
       });
-    }
-  }, [user, userProfile]);
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsLoading(true);
-    try {
-      // Handle profile update logic here
-      console.log("Updated profile:", userProfile);
-      const userToUpdate: IUserProfile = {
-        FirstName: userProfile.FirstName,
-        LastName: userProfile.LastName,
-        AvatarUrl: userProfile.AvatarUrl,
-        Bio: userProfile.Bio,
-      };
-      console.log(userToUpdate);
-      await updateUserProfile(userToUpdate);
-    } catch (caughtError) {
-      console.error("Failed to update profile:", caughtError);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target;
-    setUserProfile((prev) => ({
-      ...prev,
-      [name]: value,
+    return () => {
+      isCancelled = true;
+    };
+  }, [handleRequestError, userId]);
+
+  useEffect(() => {
+    if (!message) return;
+
+    const timer = window.setTimeout(() => setMessage(""), 3_000);
+    return () => window.clearTimeout(timer);
+  }, [message]);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+    setIsSavingProfile(true);
+
+    try {
+      const response = await updateUserProfile(userProfile);
+
+      if (!response.data) {
+        throw new Error("The API did not return the updated profile.");
+      }
+
+      setUserProfile(normalizeProfile(response.data));
+      setMessage(response.message || "Profile updated successfully.");
+    } catch (caughtError) {
+      handleRequestError(caughtError);
+    } finally {
+      setIsSavingProfile(false);
+    }
+  }
+
+  function updateField(field: keyof IUserProfile, value: string) {
+    setUserProfile((currentProfile) => ({
+      ...currentProfile,
+      [field]: value,
     }));
-  };
+  }
+
+  const isBusy = isLoadingProfile || isSavingProfile;
+  const hasProfileDetails = Boolean(
+    userProfile.firstName ||
+      userProfile.lastName ||
+      userProfile.avatarUrl ||
+      userProfile.bio,
+  );
 
   return (
     <section aria-labelledby="profile-heading" className="feature-view">
@@ -64,6 +118,7 @@ export function ProfilePanel() {
           <h1 id="profile-heading">Profile</h1>
         </div>
       </div>
+
       <div className="profile-details">
         <UserRound aria-hidden="true" />
         <dl>
@@ -77,73 +132,101 @@ export function ProfilePanel() {
           </div>
         </dl>
       </div>
-      {userHasProfile ? (
-        <div className="">
+
+      {isLoadingProfile ? (
+        <p>Loading profile...</p>
+      ) : hasProfileDetails ? (
+        <div>
           <p>
-            Welcome, {userProfile.FirstName} {userProfile.LastName}!
+            Welcome, {userProfile.firstName} {userProfile.lastName}!
           </p>
-          {userProfile.Bio && <p>{userProfile.Bio}</p>}
-          {userProfile.AvatarUrl && (
-            <img src={userProfile.AvatarUrl} alt="Avatar" className="avatar" />
+          {userProfile.bio && <p>{userProfile.bio}</p>}
+          {userProfile.avatarUrl && (
+            <img alt="Avatar" className="avatar" src={userProfile.avatarUrl} />
           )}
         </div>
       ) : (
-        <div className="">
+        <div>
           <p>Welcome, {user?.email ?? "User"}!</p>
-          <span>
-            You don&apos;t have a profile yet. Please update your profile.
-          </span>
+          <span>You don&apos;t have profile details yet.</span>
         </div>
       )}
-      <form aria-busy={isLoading} className="auth-form" onSubmit={handleSubmit}>
-        <label htmlFor="name" className="name">
+
+      <form aria-busy={isBusy} className="auth-form" onSubmit={handleSubmit}>
+        <label className="name" htmlFor="name">
           <input
-            type="text"
-            id="name"
-            name="FirstName"
-            defaultValue={userProfile.FirstName}
             aria-label="Name"
+            disabled={isBusy}
+            id="name"
+            name="firstName"
+            onChange={(event) => updateField("firstName", event.target.value)}
             placeholder="Name"
-            onChange={handleInputChange}
+            type="text"
+            value={userProfile.firstName}
           />
         </label>
-        <label htmlFor="last-name" className="name">
+        <label className="name" htmlFor="last-name">
           <input
-            type="text"
-            id="last-name"
-            name="LastName"
-            defaultValue={userProfile.LastName}
             aria-label="Last Name"
+            disabled={isBusy}
+            id="last-name"
+            name="lastName"
+            onChange={(event) => updateField("lastName", event.target.value)}
             placeholder="Last Name"
-            onChange={handleInputChange}
+            type="text"
+            value={userProfile.lastName}
           />
         </label>
-        <label htmlFor="bio" className="name">
+        <label className="name" htmlFor="bio">
           <input
-            type="text"
-            id="bio"
-            name="Bio"
-            defaultValue={userProfile.Bio}
             aria-label="Bio"
+            disabled={isBusy}
+            id="bio"
+            name="bio"
+            onChange={(event) => updateField("bio", event.target.value)}
             placeholder="Bio"
-            onChange={handleInputChange}
-          />
-        </label>
-        <label htmlFor="avatar-url" className="name">
-          <input
             type="text"
-            id="avatar-url"
-            name="AvatarUrl"
-            defaultValue={userProfile.AvatarUrl}
-            aria-label="Avatar URL"
-            placeholder="Avatar URL"
-            onChange={handleInputChange}
+            value={userProfile.bio}
           />
         </label>
-        <button type="submit" disabled={isLoading}>
-          Update Profile
+        <label className="name" htmlFor="avatar-url">
+          <input
+            aria-label="Avatar URL"
+            disabled={isBusy}
+            id="avatar-url"
+            name="avatarUrl"
+            onChange={(event) => updateField("avatarUrl", event.target.value)}
+            placeholder="Avatar URL"
+            type="url"
+            value={userProfile.avatarUrl}
+          />
+        </label>
+        <button disabled={isBusy} type="submit">
+          {isSavingProfile ? "Updating profile" : "Update Profile"}
         </button>
       </form>
+
+      <div aria-atomic="true" aria-live="polite" className="auth-feedback">
+        {message && (
+          <p className="notice is-success" role="status">
+            {message}
+          </p>
+        )}
+        {error && (
+          <p className="notice is-error" role="alert">
+            {error}
+          </p>
+        )}
+      </div>
     </section>
   );
+}
+
+function normalizeProfile(profile: IUserProfile): IUserProfile {
+  return {
+    firstName: profile.firstName ?? "",
+    lastName: profile.lastName ?? "",
+    avatarUrl: profile.avatarUrl ?? "",
+    bio: profile.bio ?? "",
+  };
 }
