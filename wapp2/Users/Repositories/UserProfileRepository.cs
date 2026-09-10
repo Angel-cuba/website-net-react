@@ -13,7 +13,7 @@ namespace Wapp2.Users.Repositories
             using var db = sqlConnectionFactory.CreateConnection();
             return await db.QueryFirstOrDefaultAsync<UserProfileModel>(
                 """
-                SELECT Id, UserId, FirstName, LastName, AvatarUrl, Bio
+                SELECT UserId, FirstName, LastName, AvatarUrl, Bio
                 FROM dbo.UserProfiles
                 WHERE UserId = @UserId
                 """,
@@ -35,8 +35,7 @@ namespace Wapp2.Users.Repositories
                     LastName = @LastName,
                     AvatarUrl = @AvatarUrl,
                     Bio = @Bio
-                OUTPUT INSERTED.Id,
-                       INSERTED.UserId,
+                OUTPUT INSERTED.UserId,
                        INSERTED.FirstName,
                        INSERTED.LastName,
                        INSERTED.AvatarUrl,
