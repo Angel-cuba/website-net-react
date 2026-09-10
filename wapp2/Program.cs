@@ -12,6 +12,9 @@ using Wapp2.Auth.Services;
 using Wapp2.Users.Interfaces;
 using Wapp2.Users.Repositories;
 using Wapp2.Users.Services;
+using Wapp2.Invitations.Interfaces;
+using Wapp2.Invitations.Repositories;
+using Wapp2.Invitations.Services;
 using Wapp2.Shared.Middleware;
 using Wapp2.Shared.Security;
 using Wapp2.Shared.DTOs;
@@ -32,6 +35,8 @@ builder.Services.AddScoped<IUserAccountService, UserAccountService>();
 // Task repository
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IInvitationRepository, InvitationRepository>();
+builder.Services.AddScoped<IInvitationService, InvitationService>();
 
 // Add authentication services
 builder.Services.AddScoped<IAuthService, AuthService>();
