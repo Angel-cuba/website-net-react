@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../auth";
 import { ApiError } from "../../../lib/http-client";
 import { getErrorMessage } from "../../../utils/errors";
-import { updateUserProfile, useProfile } from "../index";
+import { deleteUserAccount, updateUserProfile, useProfile } from "../index";
 import type { IUserProfile } from "../index";
+import { DeleteAccountPanel } from "./delete-account-panel";
 import { UserCard } from "./user-card";
 import { ProfileForm } from "./profile-form";
 
@@ -15,7 +16,7 @@ const emptyProfile: IUserProfile = {
 };
 
 export function ProfilePanel() {
-  const { expireSession, user } = useAuth();
+  const { expireSession, logout, user } = useAuth();
   const {
     isProfileLoading,
     profile,
@@ -24,6 +25,7 @@ export function ProfilePanel() {
   } = useProfile();
   const [draftProfile, setDraftProfile] = useState<IUserProfile>(emptyProfile);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -89,7 +91,24 @@ export function ProfilePanel() {
     setIsEditing(false);
   }
 
-  const isBusy = isProfileLoading || isSavingProfile;
+  async function handleDeleteAccount(password: string): Promise<boolean> {
+    setError("");
+    setMessage("");
+    setIsDeletingAccount(true);
+
+    try {
+      await deleteUserAccount({ password });
+      logout();
+      return true;
+    } catch (caughtError) {
+      handleRequestError(caughtError);
+      return false;
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  }
+
+  const isBusy = isProfileLoading || isSavingProfile || isDeletingAccount;
   const currentProfile = profile ?? emptyProfile;
 
   return (
@@ -117,6 +136,15 @@ export function ProfilePanel() {
           email={user?.email ?? "Email not provided"}
           onEdit={beginEditing}
           profile={currentProfile}
+        />
+      )}
+
+      {!isProfileLoading && !isEditing && (
+        <DeleteAccountPanel
+          disabled={isBusy}
+          isDeleting={isDeletingAccount}
+          onCancel={() => setError("")}
+          onDelete={handleDeleteAccount}
         />
       )}
 

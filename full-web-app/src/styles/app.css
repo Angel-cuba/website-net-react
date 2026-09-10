@@ -698,6 +698,57 @@ textarea:focus {
   min-width: 126px;
 }
 
+.account-danger-zone {
+  margin-top: var(--space-8);
+  padding-top: var(--space-5);
+  border-top: 1px solid #e6b9b5;
+}
+
+.account-danger-zone__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-5);
+}
+
+.account-danger-zone__heading > div {
+  min-width: 0;
+  flex: 1 1 420px;
+}
+
+.account-danger-zone__heading h2 {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--font-size-base);
+  letter-spacing: 0;
+}
+
+.account-danger-zone__heading p {
+  max-width: 620px;
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+}
+
+.delete-account-form {
+  display: grid;
+  grid-template-columns: minmax(240px, 420px) auto;
+  align-items: end;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+  padding: var(--space-4);
+  border: 1px solid #e6b9b5;
+  border-radius: var(--radius-md);
+  background: var(--color-danger-soft);
+}
+
+.delete-account-form__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
 .is-spinning {
   animation: spin 900ms linear infinite;
 }
@@ -800,5 +851,24 @@ textarea:focus {
 
   .profile-form__actions .button {
     width: 100%;
+  }
+
+  .account-danger-zone__heading,
+  .delete-account-form {
+    grid-template-columns: 1fr;
+  }
+
+  .account-danger-zone__heading {
+    flex-direction: column;
+  }
+
+  .account-danger-zone__heading .button,
+  .delete-account-form__actions,
+  .delete-account-form__actions .button {
+    width: 100%;
+  }
+
+  .delete-account-form__actions {
+    flex-direction: column-reverse;
   }
 }
