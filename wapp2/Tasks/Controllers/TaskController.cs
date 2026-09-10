@@ -1,8 +1,10 @@
 using Tasks.Models;
+using Tasks.DTOs;
 using Tasks.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wapp2.Shared.Security;
+using Wapp2.Shared.DTOs;
 
 namespace Tasks.Controllers
 {
@@ -26,6 +28,18 @@ namespace Tasks.Controllers
             var tasks = await _service.GetTasks(_currentUserService.UserId);
 
             return Ok(tasks);
+        }
+
+        [HttpGet("shared")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<SharedTaskResponse>>>>
+            GetSharedTasks()
+        {
+            var tasks = await _service.GetSharedTasks(_currentUserService.UserId);
+
+            return Ok(ApiResponse<IEnumerable<SharedTaskResponse>>.Ok(
+                tasks,
+                "Shared tasks loaded successfully."
+            ));
         }
 
         [HttpGet("{id:int}")]

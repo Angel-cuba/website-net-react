@@ -27,6 +27,41 @@ namespace Tasks.Repositories
             );
         }
 
+        public async Task<IEnumerable<SharedTaskDetailsModel>> GetSharedTasks(int userId)
+        {
+            using var db = _sqlConnectionFactory.CreateConnection();
+
+            return await db.QueryAsync<SharedTaskDetailsModel>(
+                """
+                SELECT task.Id,
+                       task.Title,
+                       task.Category,
+                       task.Description,
+                       task.OwnerUserId,
+                       task.DueDate,
+                       task.IsCompleted,
+                       task.Priority,
+                       task.Status,
+                       task.CreatedAt,
+                       task.UpdatedAt,
+                       owner.Email AS OwnerEmail,
+                       COALESCE(profile.FirstName, '') AS OwnerFirstName,
+                       COALESCE(profile.LastName, '') AS OwnerLastName,
+                       profile.AvatarUrl AS OwnerAvatarUrl,
+                       access.CanEdit,
+                       access.CreatedAt AS SharedAt
+                FROM dbo.TaskAccess access
+                INNER JOIN dbo.Tasks task ON task.Id = access.TaskId
+                INNER JOIN dbo.Users owner ON owner.Id = task.OwnerUserId
+                LEFT JOIN dbo.UserProfiles profile ON profile.UserId = owner.Id
+                WHERE access.UserId = @UserId
+                ORDER BY access.CreatedAt DESC,
+                         task.CreatedAt DESC
+                """,
+                new { UserId = userId }
+            );
+        }
+
         public async Task<TaskModel> CreateTask(TaskModel task, int ownerUserId)
         {
             using var db = _sqlConnectionFactory.CreateConnection();
