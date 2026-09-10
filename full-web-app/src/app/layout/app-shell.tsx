@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { IconButton } from "../../components/icon-button";
 import { AuthPanel, useAuth } from "../../features/auth";
+import { useInvitations } from "../../features/invitations/hooks/use-invitations";
 import type { AppPath } from "../router/routes";
 import { useProfile } from "../../features/profile";
 
@@ -38,6 +39,10 @@ export function AppShell({ activePath, children, onNavigate }: AppShellProps) {
   const { isAuthenticated, logout, user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { profile } = useProfile();
+  const { invitations } = useInvitations();
+  const pendingInvitationCount = invitations.filter(
+    (invitation) => invitation.status === "pending",
+  ).length;
 
   useEffect(() => {
     if (!isMenuOpen) return;
@@ -126,6 +131,14 @@ export function AppShell({ activePath, children, onNavigate }: AppShellProps) {
                     >
                       <Icon aria-hidden="true" />
                       <span>{label}</span>
+                      {path === "/invitations" && pendingInvitationCount > 0 && (
+                        <span
+                          aria-label={`${pendingInvitationCount} pending invitation${pendingInvitationCount === 1 ? "" : "s"}`}
+                          className="nav-notification-badge"
+                        >
+                          {pendingInvitationCount > 99 ? "99+" : pendingInvitationCount}
+                        </span>
+                      )}
                     </a>
                   </li>
                 ))}
