@@ -62,6 +62,76 @@ namespace Tasks.Repositories
             );
         }
 
+        public async Task<TaskSharingDetailsModel?> GetTaskSharing(
+            int taskId,
+            int ownerUserId
+        )
+        {
+            using var db = _sqlConnectionFactory.CreateConnection();
+            using var result = await db.QueryMultipleAsync(
+                """
+                SELECT Id AS TaskId,
+                       Title AS TaskTitle
+                FROM dbo.Tasks
+                WHERE Id = @TaskId
+                  AND OwnerUserId = @OwnerUserId;
+
+                SELECT invitation.Id AS InvitationId,
+                       invitation.InvitedUserId,
+                       COALESCE(invitation.InvitedEmail, invited.Email, '') AS InvitedEmail,
+                       COALESCE(profile.FirstName, '') AS InvitedFirstName,
+                       COALESCE(profile.LastName, '') AS InvitedLastName,
+                       profile.AvatarUrl AS InvitedAvatarUrl,
+                       invitation.CreatedAt
+                FROM dbo.TaskInvitations invitation
+                INNER JOIN dbo.Tasks task ON task.Id = invitation.TaskId
+                LEFT JOIN dbo.Users invited ON invited.Id = invitation.InvitedUserId
+                LEFT JOIN dbo.UserProfiles profile ON profile.UserId = invited.Id
+                WHERE invitation.TaskId = @TaskId
+                  AND task.OwnerUserId = @OwnerUserId
+                  AND invitation.Status = @PendingStatus
+                ORDER BY invitation.CreatedAt DESC;
+
+                SELECT access.Id AS AccessId,
+                       access.UserId,
+                       member.Email,
+                       COALESCE(profile.FirstName, '') AS FirstName,
+                       COALESCE(profile.LastName, '') AS LastName,
+                       profile.AvatarUrl,
+                       access.CanEdit,
+                       access.CreatedAt AS SharedAt
+                FROM dbo.TaskAccess access
+                INNER JOIN dbo.Tasks task ON task.Id = access.TaskId
+                INNER JOIN dbo.Users member ON member.Id = access.UserId
+                LEFT JOIN dbo.UserProfiles profile ON profile.UserId = member.Id
+                WHERE access.TaskId = @TaskId
+                  AND task.OwnerUserId = @OwnerUserId
+                ORDER BY access.CreatedAt DESC;
+                """,
+                new
+                {
+                    TaskId = taskId,
+                    OwnerUserId = ownerUserId,
+                    PendingStatus = Wapp2.Invitations.Models.InvitationStatuses.Pending
+                }
+            );
+
+            var sharing = await result.ReadSingleOrDefaultAsync<TaskSharingDetailsModel>();
+            var pendingInvitations = (
+                await result.ReadAsync<TaskSharingInvitationDetailsModel>()
+            ).AsList();
+            var members = (await result.ReadAsync<TaskAccessDetailsModel>()).AsList();
+
+            if (sharing == null)
+            {
+                return null;
+            }
+
+            sharing.PendingInvitations = pendingInvitations;
+            sharing.Members = members;
+            return sharing;
+        }
+
         public async Task<TaskModel> CreateTask(TaskModel task, int ownerUserId)
         {
             using var db = _sqlConnectionFactory.CreateConnection();
@@ -168,6 +238,34 @@ namespace Tasks.Repositories
                 await transaction.RollbackAsync();
                 throw;
             }
+        }
+
+        public async Task<bool> DeleteTaskAccess(
+            int taskId,
+            int accessId,
+            int ownerUserId
+        )
+        {
+            using var db = _sqlConnectionFactory.CreateConnection();
+
+            var deletedRows = await db.ExecuteAsync(
+                """
+                DELETE access
+                FROM dbo.TaskAccess access
+                INNER JOIN dbo.Tasks task ON task.Id = access.TaskId
+                WHERE access.Id = @AccessId
+                  AND access.TaskId = @TaskId
+                  AND task.OwnerUserId = @OwnerUserId
+                """,
+                new
+                {
+                    TaskId = taskId,
+                    AccessId = accessId,
+                    OwnerUserId = ownerUserId
+                }
+            );
+
+            return deletedRows > 0;
         }
     }
 }

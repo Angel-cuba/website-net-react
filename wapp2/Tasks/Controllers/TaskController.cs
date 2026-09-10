@@ -42,6 +42,44 @@ namespace Tasks.Controllers
             ));
         }
 
+        [HttpGet("{id:int}/sharing")]
+        public async Task<ActionResult<ApiResponse<TaskSharingResponse>>> GetTaskSharing(
+            int id
+        )
+        {
+            var sharing = await _service.GetTaskSharing(
+                id,
+                _currentUserService.UserId
+            );
+
+            if (sharing == null)
+            {
+                return NotFound(ApiResponse<TaskSharingResponse>.Fail("Task not found."));
+            }
+
+            return Ok(ApiResponse<TaskSharingResponse>.Ok(
+                sharing,
+                "Task sharing loaded successfully."
+            ));
+        }
+
+        [HttpDelete("{id:int}/access/{accessId:int}")]
+        public async Task<IActionResult> RevokeTaskAccess(int id, int accessId)
+        {
+            var deleted = await _service.RevokeTaskAccess(
+                id,
+                accessId,
+                _currentUserService.UserId
+            );
+
+            if (!deleted)
+            {
+                return NotFound(ApiResponse<object>.Fail("Task access not found."));
+            }
+
+            return NoContent();
+        }
+
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetTask(int id)
         {

@@ -25,6 +25,53 @@ namespace Tasks.Services
             return tasks.Select(MapSharedTaskResponse);
         }
 
+        public async Task<TaskSharingResponse?> GetTaskSharing(
+            int taskId,
+            int ownerUserId
+        )
+        {
+            var sharing = await _repository.GetTaskSharing(taskId, ownerUserId);
+            if (sharing == null)
+            {
+                return null;
+            }
+
+            return new TaskSharingResponse
+            {
+                TaskId = sharing.TaskId,
+                TaskTitle = sharing.TaskTitle,
+                PendingInvitations = sharing.PendingInvitations
+                    .Select(invitation => new PendingTaskInvitationResponse
+                    {
+                        InvitationId = invitation.InvitationId,
+                        InvitedEmail = invitation.InvitedEmail,
+                        InvitedName = FormatDisplayName(
+                            invitation.InvitedFirstName,
+                            invitation.InvitedLastName,
+                            invitation.InvitedEmail
+                        ),
+                        InvitedAvatarUrl = invitation.InvitedAvatarUrl,
+                        CreatedAt = invitation.CreatedAt
+                    })
+                    .ToList(),
+                Members = sharing.Members
+                    .Select(member => new TaskAccessResponse
+                    {
+                        AccessId = member.AccessId,
+                        Email = member.Email,
+                        Name = FormatDisplayName(
+                            member.FirstName,
+                            member.LastName,
+                            member.Email
+                        ),
+                        AvatarUrl = member.AvatarUrl,
+                        CanEdit = member.CanEdit,
+                        SharedAt = member.SharedAt
+                    })
+                    .ToList()
+            };
+        }
+
         public async Task<TaskModel?> GetTask(int id, int ownerUserId)
         {
             return await _repository.GetTask(id, ownerUserId);
@@ -55,14 +102,13 @@ namespace Tasks.Services
             await _repository.DeleteTask(id, ownerUserId);
         }
 
+        public Task<bool> RevokeTaskAccess(int taskId, int accessId, int ownerUserId)
+        {
+            return _repository.DeleteTaskAccess(taskId, accessId, ownerUserId);
+        }
+
         private static SharedTaskResponse MapSharedTaskResponse(SharedTaskDetailsModel task)
         {
-            var ownerName = string.Join(
-                " ",
-                new[] { task.OwnerFirstName, task.OwnerLastName }
-                    .Where(name => !string.IsNullOrWhiteSpace(name))
-            );
-
             return new SharedTaskResponse
             {
                 Id = task.Id,
@@ -76,13 +122,30 @@ namespace Tasks.Services
                 CreatedAt = task.CreatedAt,
                 UpdatedAt = task.UpdatedAt,
                 OwnerEmail = task.OwnerEmail,
-                OwnerName = string.IsNullOrWhiteSpace(ownerName)
-                    ? task.OwnerEmail
-                    : ownerName,
+                OwnerName = FormatDisplayName(
+                    task.OwnerFirstName,
+                    task.OwnerLastName,
+                    task.OwnerEmail
+                ),
                 OwnerAvatarUrl = task.OwnerAvatarUrl,
                 CanEdit = task.CanEdit,
                 SharedAt = task.SharedAt
             };
+        }
+
+        private static string FormatDisplayName(
+            string firstName,
+            string lastName,
+            string fallback
+        )
+        {
+            var displayName = string.Join(
+                " ",
+                new[] { firstName, lastName }
+                    .Where(name => !string.IsNullOrWhiteSpace(name))
+            );
+
+            return string.IsNullOrWhiteSpace(displayName) ? fallback : displayName;
         }
     }
 }
