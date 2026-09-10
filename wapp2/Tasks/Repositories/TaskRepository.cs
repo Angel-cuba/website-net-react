@@ -1,4 +1,5 @@
 using Dapper;
+using Microsoft.Data.SqlClient;
 using Tasks.Models;
 using Wapp2.Shared.Database;
 
@@ -82,11 +83,56 @@ namespace Tasks.Repositories
 
         public async Task DeleteTask(int id, int ownerUserId)
         {
-            using var db = _sqlConnectionFactory.CreateConnection();
-            await db.ExecuteAsync(
-                "DELETE FROM dbo.Tasks WHERE Id = @Id AND OwnerUserId = @OwnerUserId",
-                new { Id = id, OwnerUserId = ownerUserId }
-            );
+            using var db = (SqlConnection)_sqlConnectionFactory.CreateConnection();
+            await db.OpenAsync();
+
+            using var transaction = await db.BeginTransactionAsync();
+
+            try
+            {
+                var parameters = new { Id = id, OwnerUserId = ownerUserId };
+
+                await db.ExecuteAsync(
+                    """
+                    DELETE access
+                    FROM dbo.TaskAccess access
+                    INNER JOIN dbo.Tasks task ON task.Id = access.TaskId
+                    WHERE task.Id = @Id
+                      AND task.OwnerUserId = @OwnerUserId
+                    """,
+                    parameters,
+                    transaction
+                );
+
+                await db.ExecuteAsync(
+                    """
+                    DELETE invitation
+                    FROM dbo.TaskInvitations invitation
+                    INNER JOIN dbo.Tasks task ON task.Id = invitation.TaskId
+                    WHERE task.Id = @Id
+                      AND task.OwnerUserId = @OwnerUserId
+                    """,
+                    parameters,
+                    transaction
+                );
+
+                await db.ExecuteAsync(
+                    """
+                    DELETE FROM dbo.Tasks
+                    WHERE Id = @Id
+                      AND OwnerUserId = @OwnerUserId
+                    """,
+                    parameters,
+                    transaction
+                );
+
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
     }
 }
