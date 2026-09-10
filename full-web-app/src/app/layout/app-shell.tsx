@@ -48,8 +48,12 @@ export function AppShell({ activePath, children, onNavigate }: AppShellProps) {
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [isMenuOpen]);
 
-  function handleNavigation(event: MouseEvent<HTMLAnchorElement>, path: AppPath) {
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  function handleNavigation(
+    event: MouseEvent<HTMLAnchorElement>,
+    path: AppPath,
+  ) {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+      return;
 
     event.preventDefault();
     setIsMenuOpen(false);
@@ -57,14 +61,19 @@ export function AppShell({ activePath, children, onNavigate }: AppShellProps) {
   }
 
   return (
-    <div className={`app-layout ${isAuthenticated ? "is-authenticated" : "is-guest"}`}>
+    <div
+      className={`app-layout ${isAuthenticated ? "is-authenticated" : "is-guest"}`}
+    >
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
 
       {isAuthenticated && (
         <header className="mobile-header">
-          <a href="/tasks" onClick={(event) => handleNavigation(event, "/tasks")}>
+          <a
+            href="/tasks"
+            onClick={(event) => handleNavigation(event, "/tasks")}
+          >
             <span className="brand-mark" aria-hidden="true">
               W
             </span>
@@ -77,12 +86,19 @@ export function AppShell({ activePath, children, onNavigate }: AppShellProps) {
             onClick={() => setIsMenuOpen((isOpen) => !isOpen)}
             type="button"
           >
-            {isMenuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
+            {isMenuOpen ? (
+              <X aria-hidden="true" />
+            ) : (
+              <Menu aria-hidden="true" />
+            )}
           </IconButton>
         </header>
       )}
 
-      <aside className={`sidebar ${isMenuOpen ? "is-open" : ""}`} id="app-sidebar">
+      <aside
+        className={`sidebar ${isMenuOpen ? "is-open" : ""}`}
+        id="app-sidebar"
+      >
         <div className="sidebar-brand" aria-label="Wapp2">
           <span className="brand-mark" aria-hidden="true">
             W
@@ -124,7 +140,11 @@ export function AppShell({ activePath, children, onNavigate }: AppShellProps) {
                   <span>{user?.id ? `User ${user.id}` : "Authenticated"}</span>
                 </div>
               </div>
-              <button className="logout-action" onClick={() => logout()} type="button">
+              <button
+                className="logout-action"
+                onClick={() => logout()}
+                type="button"
+              >
                 <LogOut aria-hidden="true" />
                 <span>Logout</span>
               </button>
