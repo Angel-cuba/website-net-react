@@ -995,6 +995,205 @@ textarea:focus {
   animation: skeleton-loading 1.4s ease infinite alternate;
 }
 
+.shared-feedback {
+  min-height: 58px;
+  margin-top: calc(var(--space-3) * -1);
+}
+
+.shared-list-heading {
+  min-height: 38px;
+  margin-bottom: var(--space-3);
+}
+
+.shared-list-heading h2 {
+  font-size: var(--font-size-base);
+}
+
+.shared-task-list {
+  display: grid;
+  gap: 10px;
+}
+
+.shared-task-card {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-info);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-subtle);
+}
+
+.shared-task-card.is-overdue {
+  border-left-color: var(--color-warning);
+}
+
+.shared-task-card.is-completed {
+  border-left-color: var(--color-primary);
+  background: #fbfcfb;
+}
+
+.shared-task-card__heading,
+.shared-task-card__heading > div,
+.shared-access,
+.shared-task-card__meta,
+.shared-task-card__meta > span,
+.shared-task-card__owner {
+  display: flex;
+  align-items: center;
+}
+
+.shared-task-card__heading {
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.shared-task-card__heading > div {
+  min-width: 0;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.shared-task-card h3 {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--font-size-base);
+  letter-spacing: 0;
+  line-height: 1.35;
+}
+
+.shared-task-card.is-completed h3,
+.shared-task-card.is-completed .shared-task-card__description {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.shared-access {
+  min-height: 25px;
+  flex: 0 0 auto;
+  gap: var(--space-1);
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-info-soft);
+  color: var(--color-info);
+  font-size: 0.6875rem;
+  font-weight: 800;
+}
+
+.shared-access--edit {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-hover);
+}
+
+.shared-access svg {
+  width: 13px;
+  height: 13px;
+}
+
+.shared-task-card__description {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: var(--space-3) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.shared-task-card__meta {
+  flex-wrap: wrap;
+  gap: 7px 14px;
+  margin-top: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.shared-task-card__meta > span {
+  gap: 5px;
+}
+
+.shared-task-card__meta > span:not(:last-child)::after {
+  margin-left: 9px;
+  color: var(--color-border-strong);
+  content: "/";
+}
+
+.shared-task-card__meta svg {
+  width: 14px;
+  height: 14px;
+}
+
+.shared-task-card__owner {
+  min-width: 0;
+  gap: 10px;
+  padding-top: var(--space-3);
+  margin-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.shared-owner-avatar {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.shared-owner-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.shared-owner-avatar svg {
+  width: 17px;
+  height: 17px;
+}
+
+.shared-owner-identity {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.shared-owner-identity > span,
+.shared-at {
+  color: var(--color-text-muted);
+  font-size: 0.6875rem;
+}
+
+.shared-owner-identity strong,
+.shared-owner-identity > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shared-owner-identity strong {
+  font-size: var(--font-size-xs);
+}
+
+.shared-at {
+  margin-left: auto;
+  text-align: right;
+}
+
+.shared-task-skeleton {
+  height: 176px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #f0f3f1;
+  animation: skeleton-loading 1.4s ease infinite alternate;
+}
+
 .user-card {
   display: grid;
   grid-template-columns: 88px minmax(0, 1fr);
@@ -1293,6 +1492,38 @@ textarea:focus {
 
   .invitation-card__actions .button {
     flex: 1;
+  }
+
+  .shared-panel .view-heading {
+    align-items: center;
+  }
+
+  .shared-list-heading {
+    align-items: flex-start;
+  }
+
+  .shared-list-heading > div {
+    display: grid;
+    gap: 2px;
+  }
+
+  .shared-task-card__heading {
+    align-items: flex-start;
+  }
+
+  .shared-task-card__meta > span:not(:last-child)::after {
+    content: none;
+  }
+
+  .shared-task-card__owner {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .shared-at {
+    width: 100%;
+    margin-left: 44px;
+    text-align: left;
   }
 
   .user-card {
