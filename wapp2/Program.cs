@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Tasks.Repositories;
@@ -27,6 +28,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserProfileRepository, UserProfileRepository>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
+builder.Services.AddScoped<IUserAccountService, UserAccountService>();
 // Task repository
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<ITaskService, TaskService>();
@@ -60,6 +62,25 @@ builder.Services
 
         options.Events = new JwtBearerEvents
         {
+            OnTokenValidated = async context =>
+            {
+                var userIdClaim = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(userIdClaim, out var userId))
+                {
+                    context.Fail("User identity is invalid.");
+                    return;
+                }
+
+                var userRepository = context.HttpContext.RequestServices
+                    .GetRequiredService<IUserRepository>();
+                var user = await userRepository.GetUser(userId);
+
+                if (user == null)
+                {
+                    context.Fail("User account no longer exists.");
+                }
+            },
             OnChallenge = async context =>
             {
                 context.HandleResponse();

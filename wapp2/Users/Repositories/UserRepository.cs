@@ -108,7 +108,7 @@ namespace Wapp2.Users.Repositories
             await db.ExecuteAsync("UPDATE dbo.Users SET Name = @Name, Email = @Email WHERE Id = @Id", user);
             return user;
         }
-        public async Task DeleteUserAndRelatedData(int id)
+        public async Task<bool> DeleteUserAndRelatedData(int userId)
         {
             using var db = (SqlConnection)sqlConnectionFactory.CreateConnection();
             await db.OpenAsync();
@@ -117,10 +117,72 @@ namespace Wapp2.Users.Repositories
 
             try
             {
-                await db.ExecuteAsync("DELETE FROM dbo.UserRoles WHERE UserId = @UserId", new { UserId = id }, transaction);
-                await db.ExecuteAsync("DELETE FROM dbo.UserProfiles WHERE UserId = @UserId", new { UserId = id }, transaction);
-                await db.ExecuteAsync("DELETE FROM dbo.Users WHERE Id = @UserId", new { UserId = id }, transaction);
+                var parameters = new { UserId = userId };
+
+                await db.ExecuteAsync(
+                    """
+                    DELETE access
+                    FROM dbo.TaskAccess access
+                    WHERE access.UserId = @UserId
+                       OR EXISTS (
+                           SELECT 1
+                           FROM dbo.Tasks task
+                           WHERE task.Id = access.TaskId
+                             AND task.OwnerUserId = @UserId
+                       )
+                    """,
+                    parameters,
+                    transaction
+                );
+
+                await db.ExecuteAsync(
+                    """
+                    DELETE invitation
+                    FROM dbo.TaskInvitations invitation
+                    WHERE invitation.InvitedUserId = @UserId
+                       OR invitation.InvitedByUserId = @UserId
+                       OR invitation.InvitedEmail = (
+                           SELECT Email FROM dbo.Users WHERE Id = @UserId
+                       )
+                       OR EXISTS (
+                           SELECT 1
+                           FROM dbo.Tasks task
+                           WHERE task.Id = invitation.TaskId
+                             AND task.OwnerUserId = @UserId
+                       )
+                    """,
+                    parameters,
+                    transaction
+                );
+
+                await db.ExecuteAsync(
+                    "DELETE FROM dbo.Notifications WHERE UserId = @UserId",
+                    parameters,
+                    transaction
+                );
+                await db.ExecuteAsync(
+                    "DELETE FROM dbo.Tasks WHERE OwnerUserId = @UserId",
+                    parameters,
+                    transaction
+                );
+                await db.ExecuteAsync(
+                    "DELETE FROM dbo.UserRoles WHERE UserId = @UserId",
+                    parameters,
+                    transaction
+                );
+                await db.ExecuteAsync(
+                    "DELETE FROM dbo.UserProfiles WHERE UserId = @UserId",
+                    parameters,
+                    transaction
+                );
+                var deletedUsers = await db.ExecuteAsync(
+                    "DELETE FROM dbo.Users WHERE Id = @UserId",
+                    parameters,
+                    transaction
+                );
+
                 await transaction.CommitAsync();
+                return deletedUsers > 0;
             }
             catch
             {
