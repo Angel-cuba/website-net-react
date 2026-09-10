@@ -8,6 +8,7 @@ type TaskListProps = {
   tasks: TaskItem[];
   onDelete: (taskId: number) => Promise<boolean>;
   onEdit: (taskId: number) => void;
+  onShare: (taskId: number) => void;
   onToggle: (task: TaskItem) => Promise<void>;
 };
 
@@ -16,6 +17,7 @@ export function TaskList({
   tasks,
   onDelete,
   onEdit,
+  onShare,
   onToggle,
 }: TaskListProps) {
   if (isLoading && tasks.length === 0) {
@@ -44,6 +46,7 @@ export function TaskList({
           key={task.id}
           onDelete={onDelete}
           onEdit={onEdit}
+          onShare={onShare}
           onToggle={onToggle}
           task={task}
         />

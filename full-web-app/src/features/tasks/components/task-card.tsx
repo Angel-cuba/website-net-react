@@ -6,6 +6,7 @@ import {
   Circle,
   Clock3,
   Pencil,
+  Share2,
   Trash2,
 } from "lucide-react";
 import { IconButton } from "../../../components/icon-button";
@@ -16,11 +17,19 @@ type TaskCardProps = {
   disabled: boolean;
   onDelete: (taskId: number) => Promise<boolean>;
   onEdit: (taskId: number) => void;
+  onShare: (taskId: number) => void;
   onToggle: (task: TaskItem) => Promise<void>;
   task: TaskItem;
 };
 
-export function TaskCard({ disabled, onDelete, onEdit, onToggle, task }: TaskCardProps) {
+export function TaskCard({
+  disabled,
+  onDelete,
+  onEdit,
+  onShare,
+  onToggle,
+  task,
+}: TaskCardProps) {
   const [currentTime] = useState(Date.now);
   const isOverdue = Boolean(
     !task.isCompleted && task.dueDate && new Date(task.dueDate).getTime() < currentTime,
@@ -79,6 +88,14 @@ export function TaskCard({ disabled, onDelete, onEdit, onToggle, task }: TaskCar
             </span>
           </div>
           <div className="task-card__actions">
+            <IconButton
+              aria-label={`Share ${task.title}`}
+              disabled={disabled}
+              onClick={() => onShare(task.id)}
+              type="button"
+            >
+              <Share2 aria-hidden="true" />
+            </IconButton>
             <IconButton
               aria-label={`Edit ${task.title}`}
               disabled={disabled}

@@ -4,9 +4,11 @@ import { Button } from "../../../components/button";
 import { useTasks } from "../hooks/use-tasks";
 import { TaskForm } from "./task-form";
 import { TaskList } from "./task-list";
+import { TaskSharingDialog } from "./task-sharing-dialog";
 
 export function TaskPanel() {
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [sharingTaskId, setSharingTaskId] = useState<number | null>(null);
   const {
     tasks,
     message,
@@ -19,6 +21,7 @@ export function TaskPanel() {
     removeTask,
   } = useTasks();
   const editingTask = tasks.find((task) => task.id === editingTaskId) ?? null;
+  const sharingTask = tasks.find((task) => task.id === sharingTaskId) ?? null;
 
   async function updateEditingTask(payload: Parameters<typeof saveTask>[1]) {
     if (!editingTaskId) return false;
@@ -31,6 +34,7 @@ export function TaskPanel() {
   async function deleteTask(taskId: number) {
     const succeeded = await removeTask(taskId);
     if (succeeded && editingTaskId === taskId) setEditingTaskId(null);
+    if (succeeded && sharingTaskId === taskId) setSharingTaskId(null);
     return succeeded;
   }
 
@@ -76,9 +80,17 @@ export function TaskPanel() {
         isLoading={isLoading}
         onDelete={deleteTask}
         onEdit={setEditingTaskId}
+        onShare={setSharingTaskId}
         onToggle={toggleTask}
         tasks={tasks}
       />
+
+      {sharingTask && (
+        <TaskSharingDialog
+          onClose={() => setSharingTaskId(null)}
+          task={sharingTask}
+        />
+      )}
     </section>
   );
 }
