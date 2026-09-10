@@ -13,6 +13,7 @@ import {
 import { IconButton } from "../../components/icon-button";
 import { AuthPanel, useAuth } from "../../features/auth";
 import type { AppPath } from "../router/routes";
+import { useProfile } from "../../features/profile";
 
 type AppShellProps = {
   activePath: AppPath;
@@ -36,6 +37,7 @@ const navigationItems: NavigationItem[] = [
 export function AppShell({ activePath, children, onNavigate }: AppShellProps) {
   const { isAuthenticated, logout, user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { profile } = useProfile();
 
   useEffect(() => {
     if (!isMenuOpen) return;
@@ -132,8 +134,21 @@ export function AppShell({ activePath, children, onNavigate }: AppShellProps) {
 
             <div className="sidebar-footer">
               <div className="user-summary">
-                <span className="user-avatar" aria-hidden="true">
-                  {(user?.email?.[0] ?? "U").toUpperCase()}
+                <span className="user-avatar">
+                  {profile?.avatarUrl ? (
+                    <img
+                      alt={`${profile.firstName} ${profile.lastName} profile avatar`}
+                      src={profile.avatarUrl}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        borderRadius: "50%",
+                      }}
+                    />
+                  ) : (
+                    <UserRound aria-hidden="true" />
+                  )}
                 </span>
                 <div>
                   <strong>{user?.email ?? "Signed in"}</strong>

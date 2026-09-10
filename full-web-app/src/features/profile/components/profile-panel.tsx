@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { useAuth } from "../../auth";
 import { ApiError } from "../../../lib/http-client";
 import { getErrorMessage } from "../../../utils/errors";
-import { getUserProfile, updateUserProfile } from "../index";
+import { updateUserProfile, useProfile } from "../index";
 import type { IUserProfile } from "../index";
 import { UserCard } from "./user-card";
 
@@ -16,9 +16,13 @@ const emptyProfile: IUserProfile = {
 
 export function ProfilePanel() {
   const { expireSession, user } = useAuth();
-  const userId = user?.id;
-  const [userProfile, setUserProfile] = useState<IUserProfile>(emptyProfile);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const {
+    isProfileLoading,
+    profile,
+    profileError,
+    replaceProfile,
+  } = useProfile();
+  const [draftProfile, setDraftProfile] = useState<IUserProfile>(emptyProfile);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState("");
@@ -37,37 +41,6 @@ export function ProfilePanel() {
   );
 
   useEffect(() => {
-    if (!userId) return;
-
-    let isCancelled = false;
-
-    void getUserProfile()
-      .then((response) => {
-        if (isCancelled) return;
-
-        if (!response.data) {
-          throw new Error("The API did not return profile data.");
-        }
-
-        setUserProfile(normalizeProfile(response.data));
-      })
-      .catch((caughtError: unknown) => {
-        if (!isCancelled) {
-          handleRequestError(caughtError);
-        }
-      })
-      .finally(() => {
-        if (!isCancelled) {
-          setIsLoadingProfile(false);
-        }
-      });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [handleRequestError, userId]);
-
-  useEffect(() => {
     if (!message) return;
 
     const timer = window.setTimeout(() => setMessage(""), 3_000);
@@ -81,13 +54,13 @@ export function ProfilePanel() {
     setIsSavingProfile(true);
 
     try {
-      const response = await updateUserProfile(userProfile);
+      const response = await updateUserProfile(draftProfile);
 
       if (!response.data) {
         throw new Error("The API did not return the updated profile.");
       }
 
-      setUserProfile(normalizeProfile(response.data));
+      replaceProfile(response.data);
       setIsEditing(false);
       setMessage(response.message || "Profile updated successfully.");
     } catch (caughtError) {
@@ -98,13 +71,20 @@ export function ProfilePanel() {
   }
 
   function updateField(field: keyof IUserProfile, value: string) {
-    setUserProfile((currentProfile) => ({
+    setDraftProfile((currentProfile) => ({
       ...currentProfile,
       [field]: value,
     }));
   }
 
-  const isBusy = isLoadingProfile || isSavingProfile;
+  function beginEditing() {
+    setDraftProfile({ ...(profile ?? emptyProfile) });
+    setError("");
+    setIsEditing(true);
+  }
+
+  const isBusy = isProfileLoading || isSavingProfile;
+  const currentProfile = profile ?? emptyProfile;
 
   return (
     <section aria-labelledby="profile-heading" className="feature-view">
@@ -115,7 +95,7 @@ export function ProfilePanel() {
         </div>
       </div>
 
-      {isLoadingProfile ? (
+      {isProfileLoading ? (
         <p>Loading profile...</p>
       ) : isEditing ? (
         <form aria-busy={isBusy} className="auth-form" onSubmit={handleSubmit}>
@@ -128,7 +108,7 @@ export function ProfilePanel() {
               onChange={(event) => updateField("firstName", event.target.value)}
               placeholder="Name"
               type="text"
-              value={userProfile.firstName}
+              value={draftProfile.firstName}
             />
           </label>
           <label className="name" htmlFor="last-name">
@@ -140,7 +120,7 @@ export function ProfilePanel() {
               onChange={(event) => updateField("lastName", event.target.value)}
               placeholder="Last Name"
               type="text"
-              value={userProfile.lastName}
+              value={draftProfile.lastName}
             />
           </label>
           <label className="name" htmlFor="bio">
@@ -152,7 +132,7 @@ export function ProfilePanel() {
               onChange={(event) => updateField("bio", event.target.value)}
               placeholder="Bio"
               type="text"
-              value={userProfile.bio}
+              value={draftProfile.bio}
             />
           </label>
           <label className="name" htmlFor="avatar-url">
@@ -164,7 +144,7 @@ export function ProfilePanel() {
               onChange={(event) => updateField("avatarUrl", event.target.value)}
               placeholder="Avatar URL"
               type="url"
-              value={userProfile.avatarUrl}
+              value={draftProfile.avatarUrl}
             />
           </label>
           <button disabled={isBusy} type="submit">
@@ -174,8 +154,8 @@ export function ProfilePanel() {
       ) : (
         <UserCard
           email={user?.email ?? "Email not provided"}
-          onEdit={() => setIsEditing(true)}
-          profile={userProfile}
+          onEdit={beginEditing}
+          profile={currentProfile}
         />
       )}
 
@@ -185,21 +165,12 @@ export function ProfilePanel() {
             {message}
           </p>
         )}
-        {error && (
+        {(error || profileError) && (
           <p className="notice is-error" role="alert">
-            {error}
+            {error || profileError}
           </p>
         )}
       </div>
     </section>
   );
-}
-
-function normalizeProfile(profile: IUserProfile): IUserProfile {
-  return {
-    firstName: profile.firstName ?? "",
-    lastName: profile.lastName ?? "",
-    avatarUrl: profile.avatarUrl ?? "",
-    bio: profile.bio ?? "",
-  };
 }

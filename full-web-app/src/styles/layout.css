@@ -131,7 +131,6 @@
 }
 
 .user-avatar {
-  display: grid;
   width: 34px;
   height: 34px;
   flex: 0 0 auto;
@@ -141,6 +140,10 @@
   color: var(--color-info);
   font-size: var(--font-size-sm);
   font-weight: 800;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--color-border);
+  box-shadow: 2px 1px 10px 1px var(--color-border-strong);
 }
 
 .user-summary div {
