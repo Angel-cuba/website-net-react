@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { UserRound } from "lucide-react";
 import { useAuth } from "../../auth";
 import { ApiError } from "../../../lib/http-client";
 import { getErrorMessage } from "../../../utils/errors";
 import { getUserProfile, updateUserProfile } from "../index";
 import type { IUserProfile } from "../index";
+import { UserCard } from "./user-card";
 
 const emptyProfile: IUserProfile = {
   firstName: "",
@@ -20,6 +20,7 @@ export function ProfilePanel() {
   const [userProfile, setUserProfile] = useState<IUserProfile>(emptyProfile);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -87,6 +88,7 @@ export function ProfilePanel() {
       }
 
       setUserProfile(normalizeProfile(response.data));
+      setIsEditing(false);
       setMessage(response.message || "Profile updated successfully.");
     } catch (caughtError) {
       handleRequestError(caughtError);
@@ -103,12 +105,6 @@ export function ProfilePanel() {
   }
 
   const isBusy = isLoadingProfile || isSavingProfile;
-  const hasProfileDetails = Boolean(
-    userProfile.firstName ||
-      userProfile.lastName ||
-      userProfile.avatarUrl ||
-      userProfile.bio,
-  );
 
   return (
     <section aria-labelledby="profile-heading" className="feature-view">
@@ -119,92 +115,69 @@ export function ProfilePanel() {
         </div>
       </div>
 
-      <div className="profile-details">
-        <UserRound aria-hidden="true" />
-        <dl>
-          <div>
-            <dt>Email</dt>
-            <dd>{user?.email ?? "Not provided"}</dd>
-          </div>
-          <div>
-            <dt>User ID</dt>
-            <dd>{user?.id ?? "Not provided"}</dd>
-          </div>
-        </dl>
-      </div>
-
       {isLoadingProfile ? (
         <p>Loading profile...</p>
-      ) : hasProfileDetails ? (
-        <div>
-          <p>
-            Welcome, {userProfile.firstName} {userProfile.lastName}!
-          </p>
-          {userProfile.bio && <p>{userProfile.bio}</p>}
-          {userProfile.avatarUrl && (
-            <img alt="Avatar" className="avatar" src={userProfile.avatarUrl} />
-          )}
-        </div>
+      ) : isEditing ? (
+        <form aria-busy={isBusy} className="auth-form" onSubmit={handleSubmit}>
+          <label className="name" htmlFor="name">
+            <input
+              aria-label="Name"
+              disabled={isBusy}
+              id="name"
+              name="firstName"
+              onChange={(event) => updateField("firstName", event.target.value)}
+              placeholder="Name"
+              type="text"
+              value={userProfile.firstName}
+            />
+          </label>
+          <label className="name" htmlFor="last-name">
+            <input
+              aria-label="Last Name"
+              disabled={isBusy}
+              id="last-name"
+              name="lastName"
+              onChange={(event) => updateField("lastName", event.target.value)}
+              placeholder="Last Name"
+              type="text"
+              value={userProfile.lastName}
+            />
+          </label>
+          <label className="name" htmlFor="bio">
+            <input
+              aria-label="Bio"
+              disabled={isBusy}
+              id="bio"
+              name="bio"
+              onChange={(event) => updateField("bio", event.target.value)}
+              placeholder="Bio"
+              type="text"
+              value={userProfile.bio}
+            />
+          </label>
+          <label className="name" htmlFor="avatar-url">
+            <input
+              aria-label="Avatar URL"
+              disabled={isBusy}
+              id="avatar-url"
+              name="avatarUrl"
+              onChange={(event) => updateField("avatarUrl", event.target.value)}
+              placeholder="Avatar URL"
+              type="url"
+              value={userProfile.avatarUrl}
+            />
+          </label>
+          <button disabled={isBusy} type="submit">
+            {isSavingProfile ? "Updating profile" : "Update Profile"}
+          </button>
+        </form>
       ) : (
-        <div>
-          <p>Welcome, {user?.email ?? "User"}!</p>
-          <span>You don&apos;t have profile details yet.</span>
-        </div>
+        <UserCard
+          email={user?.email ?? "Email not provided"}
+          onEdit={() => setIsEditing(true)}
+          profile={userProfile}
+        />
       )}
-
-      <form aria-busy={isBusy} className="auth-form" onSubmit={handleSubmit}>
-        <label className="name" htmlFor="name">
-          <input
-            aria-label="Name"
-            disabled={isBusy}
-            id="name"
-            name="firstName"
-            onChange={(event) => updateField("firstName", event.target.value)}
-            placeholder="Name"
-            type="text"
-            value={userProfile.firstName}
-          />
-        </label>
-        <label className="name" htmlFor="last-name">
-          <input
-            aria-label="Last Name"
-            disabled={isBusy}
-            id="last-name"
-            name="lastName"
-            onChange={(event) => updateField("lastName", event.target.value)}
-            placeholder="Last Name"
-            type="text"
-            value={userProfile.lastName}
-          />
-        </label>
-        <label className="name" htmlFor="bio">
-          <input
-            aria-label="Bio"
-            disabled={isBusy}
-            id="bio"
-            name="bio"
-            onChange={(event) => updateField("bio", event.target.value)}
-            placeholder="Bio"
-            type="text"
-            value={userProfile.bio}
-          />
-        </label>
-        <label className="name" htmlFor="avatar-url">
-          <input
-            aria-label="Avatar URL"
-            disabled={isBusy}
-            id="avatar-url"
-            name="avatarUrl"
-            onChange={(event) => updateField("avatarUrl", event.target.value)}
-            placeholder="Avatar URL"
-            type="url"
-            value={userProfile.avatarUrl}
-          />
-        </label>
-        <button disabled={isBusy} type="submit">
-          {isSavingProfile ? "Updating profile" : "Update Profile"}
-        </button>
-      </form>
 
       <div aria-atomic="true" aria-live="polite" className="auth-feedback">
         {message && (

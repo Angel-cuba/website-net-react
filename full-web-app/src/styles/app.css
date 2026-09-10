@@ -582,43 +582,73 @@ textarea:focus {
   animation: skeleton-loading 1.4s ease infinite alternate;
 }
 
-.profile-details {
+.user-card {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
+  grid-template-columns: 88px minmax(0, 1fr);
   gap: var(--space-4);
-  padding: var(--space-5) 0;
-  border-block: 1px solid var(--color-border);
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-subtle);
 }
 
-.profile-details > svg {
-  width: 28px;
-  height: 28px;
+.user-card__avatar {
+  display: grid;
+  width: 88px;
+  height: 88px;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-primary-soft);
   color: var(--color-primary);
 }
 
-.profile-details dl {
-  display: grid;
-  gap: var(--space-4);
-  margin: 0;
+.user-card__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.profile-details dl div {
-  display: grid;
-  grid-template-columns: 90px minmax(0, 1fr);
-  gap: var(--space-3);
+.user-card__avatar svg {
+  width: 34px;
+  height: 34px;
 }
 
-.profile-details dt {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-}
-
-.profile-details dd {
+.user-card__content {
   min-width: 0;
+}
+
+.user-card__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.user-card__heading h2 {
   margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  letter-spacing: 0;
+}
+
+.user-card__email,
+.user-card__bio {
+  color: var(--color-text-muted);
   overflow-wrap: anywhere;
+}
+
+.user-card__email {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-xs);
+}
+
+.user-card__bio {
+  margin: var(--space-4) 0 0;
   font-size: var(--font-size-sm);
+  line-height: 1.5;
 }
 
 .is-spinning {
@@ -695,7 +725,12 @@ textarea:focus {
     content: none;
   }
 
-  .profile-details {
+  .user-card {
     grid-template-columns: 1fr;
+  }
+
+  .user-card__avatar {
+    width: 72px;
+    height: 72px;
   }
 }
