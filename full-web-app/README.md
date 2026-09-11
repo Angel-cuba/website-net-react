@@ -1,75 +1,124 @@
-# React + TypeScript + Vite
+# Wapp2 Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Cliente web de Wapp2 construido con React, TypeScript y Vite.
 
-Currently, two official plugins are available:
+Para comprender el flujo completo, el backend, la base de datos y los permisos,
+consulta el [Project Guide](../docs/PROJECT_GUIDE.md).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Requisitos
 
-## React Compiler
+- Node `^20.19.0` o `>=22.12.0`;
+- npm;
+- API Wapp2 disponible en `http://localhost:5104`.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Configuracion
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+cp .env.example .env.local
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+`.env.local`:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```dotenv
+VITE_API_URL=http://localhost:5104
 ```
+
+La URL es la base del backend. No debe incluir `/api` ni terminar en `/`.
+Las variables `VITE_*` se incluyen en el bundle del navegador y nunca deben
+contener secretos.
+
+## Comandos
+
+```bash
+npm run dev
+npm run lint
+npm run build
+npm run preview
+```
+
+| Comando | Funcion |
+| --- | --- |
+| `npm run dev` | inicia Vite en desarrollo |
+| `npm run lint` | ejecuta ESLint |
+| `npm run build` | ejecuta TypeScript y genera el build |
+| `npm run preview` | sirve localmente el build generado |
+
+El proyecto no tiene todavia un script de tests.
+
+## Estructura
+
+```text
+src/
+|-- app/
+|   |-- layout/       # shell y navegacion
+|   |-- providers/    # auth, profile, invitations y realtime
+|   `-- router/       # rutas con History API
+|-- components/       # Button, IconButton y EmptyState
+|-- features/
+|   |-- auth/
+|   |-- invitations/
+|   |-- profile/
+|   |-- shared/
+|   `-- tasks/
+|-- hooks/
+|-- lib/              # cliente HTTP
+|-- styles/
+|-- types/
+`-- utils/
+```
+
+Cada feature mantiene cerca sus componentes, hooks, tipos y llamadas API.
+
+## Rutas
+
+| Ruta | Vista |
+| --- | --- |
+| `/tasks` | tareas propias y compartidas aceptadas |
+| `/invitations` | pendientes e historial |
+| `/shared` | tareas compartidas con y por el usuario |
+| `/profile` | perfil y eliminacion de cuenta |
+
+La aplicacion usa una navegacion ligera con `window.history`; no depende de
+React Router.
+
+## Sesion y HTTP
+
+- El JWT se guarda en `localStorage` bajo `wapp2.auth.token`.
+- `authenticatedRequest` agrega el header Bearer a las llamadas protegidas.
+- Una respuesta `401` expira la sesion local.
+- El cliente interpreta la expiracion del JWT y cierra la sesion cuando llega.
+- Los mensajes de accion desaparecen automaticamente despues de tres segundos.
+
+## Realtime
+
+`RealtimeProvider` conecta con:
+
+```text
+http://localhost:5104/hubs/notifications
+```
+
+Los eventos `InvitationsChanged`, `SharedTasksChanged` y
+`TaskSharingChanged` incrementan revisiones internas. Los hooks afectados
+vuelven a consultar la API para recuperar el estado vigente desde SQL Server.
+
+## UI de tareas
+
+- La vista principal combina tareas propias y tareas compartidas aceptadas.
+- Solo las tareas propias muestran compartir y eliminar.
+- Una tarea compartida indica su owner y el permiso actual.
+- Los controles de edicion y completado solo aparecen con `CanEdit`.
+- El formulario exige una fecha limite de al menos cinco horas desde el momento
+  actual.
+
+## Dependencias principales
+
+- React y React DOM;
+- TypeScript;
+- Vite y `@vitejs/plugin-react`;
+- `@microsoft/signalr`;
+- `lucide-react`;
+- ESLint y `typescript-eslint`.
+
+Las versiones exactas estan en `package.json` y se resumen en el
+[Project Guide](../docs/PROJECT_GUIDE.md#4-stack-y-paquetes).
