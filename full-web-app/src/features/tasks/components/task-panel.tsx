@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { Button } from "../../../components/button";
+import { useSharedTasks } from "../../shared/hooks/use-shared-tasks";
 import { useTasks } from "../hooks/use-tasks";
 import { TaskForm } from "./task-form";
 import { TaskList } from "./task-list";
@@ -20,8 +21,20 @@ export function TaskPanel() {
     toggleTask,
     removeTask,
   } = useTasks();
+  const {
+    sharedWithYou,
+    isLoading: isLoadingSharedTasks,
+    error: sharedTasksError,
+    refreshSharedTasks,
+  } = useSharedTasks();
   const editingTask = tasks.find((task) => task.id === editingTaskId) ?? null;
   const sharingTask = tasks.find((task) => task.id === sharingTaskId) ?? null;
+  const isWorkspaceLoading = isLoading || isLoadingSharedTasks;
+  const workspaceTaskCount = tasks.length + sharedWithYou.length;
+
+  async function refreshWorkspaceTasks() {
+    await Promise.all([refreshTasks(), refreshSharedTasks()]);
+  }
 
   async function updateEditingTask(payload: Parameters<typeof saveTask>[1]) {
     if (!editingTaskId) return false;
@@ -47,18 +60,21 @@ export function TaskPanel() {
         </div>
         <div className="task-toolbar">
           <Button
-            disabled={isLoading}
-            onClick={() => void refreshTasks()}
+            disabled={isWorkspaceLoading}
+            onClick={() => void refreshWorkspaceTasks()}
             type="button"
           >
-            <RefreshCw aria-hidden="true" className={isLoading ? "is-spinning" : ""} />
+            <RefreshCw
+              aria-hidden="true"
+              className={isWorkspaceLoading ? "is-spinning" : ""}
+            />
             Refresh
           </Button>
         </div>
       </div>
 
       <TaskForm
-        disabled={isLoading}
+        disabled={isWorkspaceLoading}
         editingTask={editingTask}
         key={editingTask ? `${editingTask.id}:${editingTask.updatedAt}:${editingTask.isCompleted}` : "new"}
         onCancelEdit={() => setEditingTaskId(null)}
@@ -69,19 +85,23 @@ export function TaskPanel() {
       <div aria-atomic="true" aria-live="polite" className="task-feedback">
         {message && <p className="notice is-success">{message}</p>}
         {error && <p className="notice is-error" role="alert">{error}</p>}
+        {sharedTasksError && (
+          <p className="notice is-error" role="alert">{sharedTasksError}</p>
+        )}
       </div>
 
       <div className="subsection-heading task-list-heading">
-        <h2>Your tasks</h2>
-        <span className="task-count">{tasks.length}</span>
+        <h2>Workspace tasks</h2>
+        <span className="task-count">{workspaceTaskCount}</span>
       </div>
 
       <TaskList
-        isLoading={isLoading}
+        isLoading={isWorkspaceLoading}
         onDelete={deleteTask}
         onEdit={setEditingTaskId}
         onShare={setSharingTaskId}
         onToggle={toggleTask}
+        sharedTasks={sharedWithYou}
         tasks={tasks}
       />
 

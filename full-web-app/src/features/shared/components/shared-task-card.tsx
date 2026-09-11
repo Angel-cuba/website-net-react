@@ -5,8 +5,7 @@ import {
   CheckCircle2,
   Circle,
   Clock3,
-  Eye,
-  Pencil,
+  Share2,
   UserRound,
 } from "lucide-react";
 import { formatDate } from "../../../utils/date";
@@ -58,8 +57,8 @@ export function SharedTaskCard({ task }: SharedTaskCardProps) {
           </span>
         </div>
         <span className={`shared-access shared-access--${task.canEdit ? "edit" : "view"}`}>
-          {task.canEdit ? <Pencil aria-hidden="true" /> : <Eye aria-hidden="true" />}
-          {task.canEdit ? "Can edit" : "View only"}
+          <Share2 aria-hidden="true" />
+          Shared · {task.canEdit ? "Can edit" : "View only"}
         </span>
       </div>
 

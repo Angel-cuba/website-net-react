@@ -1,10 +1,13 @@
 import { ClipboardList } from "lucide-react";
 import { EmptyState } from "../../../components/empty-state";
+import { SharedTaskCard } from "../../shared/components/shared-task-card";
+import type { SharedTaskItem } from "../../shared/types/shared-task";
 import type { TaskItem } from "../types/task";
 import { TaskCard } from "./task-card";
 
 type TaskListProps = {
   isLoading: boolean;
+  sharedTasks: SharedTaskItem[];
   tasks: TaskItem[];
   onDelete: (taskId: number) => Promise<boolean>;
   onEdit: (taskId: number) => void;
@@ -14,13 +17,14 @@ type TaskListProps = {
 
 export function TaskList({
   isLoading,
+  sharedTasks,
   tasks,
   onDelete,
   onEdit,
   onShare,
   onToggle,
 }: TaskListProps) {
-  if (isLoading && tasks.length === 0) {
+  if (isLoading && tasks.length === 0 && sharedTasks.length === 0) {
     return (
       <div aria-label="Loading tasks" className="task-list" role="status">
         {[0, 1, 2].map((item) => <div className="task-skeleton" key={item} />)}
@@ -28,10 +32,10 @@ export function TaskList({
     );
   }
 
-  if (tasks.length === 0) {
+  if (tasks.length === 0 && sharedTasks.length === 0) {
     return (
       <EmptyState
-        description="Create your first task above."
+        description="Create your first task or accept a task invitation."
         icon={<ClipboardList aria-hidden="true" />}
         title="No tasks yet"
       />
@@ -51,6 +55,7 @@ export function TaskList({
           task={task}
         />
       ))}
+      {sharedTasks.map((task) => <SharedTaskCard key={`shared-${task.id}`} task={task} />)}
     </div>
   );
 }
