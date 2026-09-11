@@ -82,6 +82,7 @@ public class InvitationService(
             {
                 await realtimeNotifier.InvitationsChanged(invitedUserId);
             }
+            await realtimeNotifier.TaskSharingChanged(currentUserId);
 
             return MapResponse(invitation);
         }
@@ -173,6 +174,10 @@ public class InvitationService(
         if (deletedInvitation?.InvitedUserId is int invitedUserId)
         {
             await realtimeNotifier.InvitationsChanged(invitedUserId);
+        }
+        if (deletedInvitation != null)
+        {
+            await realtimeNotifier.TaskSharingChanged(currentUserId);
         }
 
         return deletedInvitation != null;

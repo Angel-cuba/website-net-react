@@ -17,7 +17,7 @@ import type { TaskItem } from "../types/task";
 
 type TaskSharingDialogProps = {
   onClose: () => void;
-  task: TaskItem;
+  task: Pick<TaskItem, "id" | "title">;
 };
 
 export function TaskSharingDialog({ onClose, task }: TaskSharingDialogProps) {

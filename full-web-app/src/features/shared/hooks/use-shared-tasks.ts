@@ -3,14 +3,15 @@ import { ApiError } from "../../../lib/http-client";
 import { getErrorMessage } from "../../../utils/errors";
 import { useRealtime } from "../../../hooks/use-realtime";
 import { useAuth } from "../../auth";
-import { getSharedTasks } from "../api/shared-tasks-api";
-import type { SharedTaskItem } from "../types/shared-task";
+import { getOwnedSharedTasks, getSharedTasks } from "../api/shared-tasks-api";
+import type { OwnedSharedTaskItem, SharedTaskItem } from "../types/shared-task";
 
 export function useSharedTasks() {
   const { expireSession, isAuthenticated, user } = useAuth();
   const userId = user?.id;
-  const { sharedTasksRevision } = useRealtime();
-  const [sharedTasks, setSharedTasks] = useState<SharedTaskItem[]>([]);
+  const { sharedTasksRevision, taskSharingRevision } = useRealtime();
+  const [sharedWithYou, setSharedWithYou] = useState<SharedTaskItem[]>([]);
+  const [sharedByYou, setSharedByYou] = useState<OwnedSharedTaskItem[]>([]);
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -28,13 +29,19 @@ export function useSharedTasks() {
   );
 
   const loadSharedTasks = useCallback(async () => {
-    const response = await getSharedTasks();
+    const [receivedResponse, ownedResponse] = await Promise.all([
+      getSharedTasks(),
+      getOwnedSharedTasks(),
+    ]);
 
-    if (!response.data) {
+    if (!receivedResponse.data || !ownedResponse.data) {
       throw new Error("The API did not return shared task data.");
     }
 
-    return response.data;
+    return {
+      sharedWithYou: receivedResponse.data,
+      sharedByYou: ownedResponse.data,
+    };
   }, []);
 
   useEffect(() => {
@@ -46,13 +53,15 @@ export function useSharedTasks() {
       .then((nextTasks) => {
         if (isCancelled) return;
 
-        setSharedTasks(nextTasks);
+        setSharedWithYou(nextTasks.sharedWithYou);
+        setSharedByYou(nextTasks.sharedByYou);
         setLoadedUserId(userId);
         setError("");
       })
       .catch((caughtError: unknown) => {
         if (!isCancelled) {
-          setSharedTasks([]);
+          setSharedWithYou([]);
+          setSharedByYou([]);
           setLoadedUserId(userId);
           handleRequestError(caughtError);
         }
@@ -66,6 +75,7 @@ export function useSharedTasks() {
     isAuthenticated,
     loadSharedTasks,
     sharedTasksRevision,
+    taskSharingRevision,
     userId,
   ]);
 
@@ -76,7 +86,9 @@ export function useSharedTasks() {
     setIsRefreshing(true);
 
     try {
-      setSharedTasks(await loadSharedTasks());
+      const nextTasks = await loadSharedTasks();
+      setSharedWithYou(nextTasks.sharedWithYou);
+      setSharedByYou(nextTasks.sharedByYou);
       setLoadedUserId(userId);
       return true;
     } catch (caughtError) {
@@ -88,14 +100,18 @@ export function useSharedTasks() {
   }
 
   const hasCurrentSharedTasks = Boolean(userId && loadedUserId === userId);
-  const currentSharedTasks = isAuthenticated && hasCurrentSharedTasks ? sharedTasks : [];
+  const currentSharedWithYou = isAuthenticated && hasCurrentSharedTasks
+    ? sharedWithYou
+    : [];
+  const currentSharedByYou = isAuthenticated && hasCurrentSharedTasks ? sharedByYou : [];
   const currentError = isAuthenticated && hasCurrentSharedTasks ? error : "";
   const isLoading = Boolean(
     isAuthenticated && userId && (!hasCurrentSharedTasks || isRefreshing),
   );
 
   return {
-    sharedTasks: currentSharedTasks,
+    sharedWithYou: currentSharedWithYou,
+    sharedByYou: currentSharedByYou,
     isLoading,
     error: currentError,
     refreshSharedTasks,

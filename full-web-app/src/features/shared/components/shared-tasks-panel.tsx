@@ -1,11 +1,23 @@
-import { RefreshCw, UsersRound } from "lucide-react";
+import { useState } from "react";
+import { RefreshCw, Share2, UsersRound } from "lucide-react";
 import { Button } from "../../../components/button";
 import { EmptyState } from "../../../components/empty-state";
+import { TaskSharingDialog } from "../../tasks/components/task-sharing-dialog";
 import { useSharedTasks } from "../hooks/use-shared-tasks";
+import type { OwnedSharedTaskItem } from "../types/shared-task";
+import { OwnedSharedTaskCard } from "./owned-shared-task-card";
 import { SharedTaskCard } from "./shared-task-card";
 
 export function SharedTasksPanel() {
-  const { sharedTasks, isLoading, error, refreshSharedTasks } = useSharedTasks();
+  const [managedTask, setManagedTask] = useState<OwnedSharedTaskItem | null>(null);
+  const {
+    sharedWithYou,
+    sharedByYou,
+    isLoading,
+    error,
+    refreshSharedTasks,
+  } = useSharedTasks();
+  const hasSharedTasks = sharedWithYou.length > 0 || sharedByYou.length > 0;
 
   return (
     <section aria-labelledby="shared-heading" className="feature-view shared-panel">
@@ -28,30 +40,67 @@ export function SharedTasksPanel() {
         {error && <p className="notice is-error" role="alert">{error}</p>}
       </div>
 
-      {isLoading && sharedTasks.length === 0 ? (
+      {isLoading && !hasSharedTasks ? (
         <div aria-label="Loading shared tasks" className="shared-task-list" role="status">
           {[0, 1].map((item) => <div className="shared-task-skeleton" key={item} />)}
         </div>
-      ) : sharedTasks.length === 0 ? (
+      ) : !hasSharedTasks ? (
         <EmptyState
-          description="Tasks shared with you will appear here."
+          description="Tasks shared with you or by you will appear here."
           icon={<UsersRound aria-hidden="true" />}
           title="Nothing shared yet"
         />
       ) : (
-        <>
-          <div className="subsection-heading shared-list-heading">
-            <div>
-              <h2>Available to you</h2>
-              <span>Tasks shared by other workspace members</span>
+        <div className="shared-overview-sections">
+          <section aria-labelledby="shared-with-you-heading">
+            <div className="subsection-heading shared-list-heading">
+              <div>
+                <h2 id="shared-with-you-heading">Shared with you</h2>
+                <span>Tasks owned by other workspace members</span>
+              </div>
+              <span className="task-count">{sharedWithYou.length}</span>
             </div>
-            <span className="task-count">{sharedTasks.length}</span>
-          </div>
 
-          <div aria-busy={isLoading} className="shared-task-list">
-            {sharedTasks.map((task) => <SharedTaskCard key={task.id} task={task} />)}
-          </div>
-        </>
+            {sharedWithYou.length > 0 ? (
+              <div aria-busy={isLoading} className="shared-task-list">
+                {sharedWithYou.map((task) => <SharedTaskCard key={task.id} task={task} />)}
+              </div>
+            ) : (
+              <p className="shared-section-empty">No one has shared a task with you.</p>
+            )}
+          </section>
+
+          <section aria-labelledby="shared-by-you-heading">
+            <div className="subsection-heading shared-list-heading">
+              <div>
+                <h2 id="shared-by-you-heading">Shared by you</h2>
+                <span>Tasks where you manage access</span>
+              </div>
+              <span className="task-count">{sharedByYou.length}</span>
+            </div>
+
+            {sharedByYou.length > 0 ? (
+              <div aria-busy={isLoading} className="shared-task-list">
+                {sharedByYou.map((task) => (
+                  <OwnedSharedTaskCard
+                    key={task.id}
+                    onManageAccess={setManagedTask}
+                    task={task}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="shared-section-empty">
+                <Share2 aria-hidden="true" />
+                You are not sharing any tasks.
+              </p>
+            )}
+          </section>
+        </div>
+      )}
+
+      {managedTask && (
+        <TaskSharingDialog onClose={() => setManagedTask(null)} task={managedTask} />
       )}
     </section>
   );

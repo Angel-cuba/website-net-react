@@ -15,3 +15,18 @@ export type SharedTaskItem = {
   canEdit: boolean;
   sharedAt: string;
 };
+
+export type OwnedSharedTaskItem = {
+  id: number;
+  title: string;
+  category: string | null;
+  description: string | null;
+  dueDate: string | null;
+  isCompleted: boolean;
+  priority: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string | null;
+  activeAccessCount: number;
+  pendingInvitationCount: number;
+};
