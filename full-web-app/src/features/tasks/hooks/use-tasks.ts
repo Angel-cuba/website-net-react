@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../auth";
 import { ApiError } from "../../../lib/http-client";
 import { getErrorMessage } from "../../../utils/errors";
+import { useRealtime } from "../../../hooks/use-realtime";
 import {
   createTask as createTaskRequest,
   deleteTask as deleteTaskRequest,
@@ -13,6 +14,7 @@ import { normalizeTaskPayload } from "../utils/task-payload";
 
 export function useTasks() {
   const { expireSession, isAuthenticated } = useAuth();
+  const { taskSharingRevision } = useRealtime();
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -59,7 +61,7 @@ export function useTasks() {
     return () => {
       isCancelled = true;
     };
-  }, [handleRequestError, isAuthenticated]);
+  }, [handleRequestError, isAuthenticated, taskSharingRevision]);
 
   useEffect(() => {
     if (!message) return;

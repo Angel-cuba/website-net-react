@@ -7,8 +7,14 @@ import { TaskForm } from "./task-form";
 import { TaskList } from "./task-list";
 import { TaskSharingDialog } from "./task-sharing-dialog";
 
+type EditingTaskTarget = {
+  id: number;
+  source: "owned" | "shared";
+};
+
 export function TaskPanel() {
-  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [editingTaskTarget, setEditingTaskTarget] =
+    useState<EditingTaskTarget | null>(null);
   const [sharingTaskId, setSharingTaskId] = useState<number | null>(null);
   const {
     tasks,
@@ -24,10 +30,23 @@ export function TaskPanel() {
   const {
     sharedWithYou,
     isLoading: isLoadingSharedTasks,
+    message: sharedTasksMessage,
     error: sharedTasksError,
     refreshSharedTasks,
+    saveSharedTask,
+    toggleSharedTask,
   } = useSharedTasks();
-  const editingTask = tasks.find((task) => task.id === editingTaskId) ?? null;
+  const editingOwnedTask = editingTaskTarget?.source === "owned"
+    ? tasks.find((task) => task.id === editingTaskTarget.id) ?? null
+    : null;
+  const editingSharedTask = editingTaskTarget?.source === "shared"
+    ? sharedWithYou.find((task) => task.id === editingTaskTarget.id) ?? null
+    : null;
+  const editingTask = editingTaskTarget?.source === "shared"
+    ? editingSharedTask?.canEdit
+      ? editingSharedTask
+      : null
+    : editingOwnedTask;
   const sharingTask = tasks.find((task) => task.id === sharingTaskId) ?? null;
   const isWorkspaceLoading = isLoading || isLoadingSharedTasks;
   const workspaceTaskCount = tasks.length + sharedWithYou.length;
@@ -37,16 +56,24 @@ export function TaskPanel() {
   }
 
   async function updateEditingTask(payload: Parameters<typeof saveTask>[1]) {
-    if (!editingTaskId) return false;
+    if (!editingTaskTarget) return false;
 
-    const succeeded = await saveTask(editingTaskId, payload);
-    if (succeeded) setEditingTaskId(null);
+    const succeeded = editingTaskTarget.source === "shared"
+      ? await saveSharedTask(editingTaskTarget.id, payload)
+      : await saveTask(editingTaskTarget.id, payload);
+    if (succeeded) setEditingTaskTarget(null);
     return succeeded;
   }
 
   async function deleteTask(taskId: number) {
     const succeeded = await removeTask(taskId);
-    if (succeeded && editingTaskId === taskId) setEditingTaskId(null);
+    if (
+      succeeded &&
+      editingTaskTarget?.source === "owned" &&
+      editingTaskTarget.id === taskId
+    ) {
+      setEditingTaskTarget(null);
+    }
     if (succeeded && sharingTaskId === taskId) setSharingTaskId(null);
     return succeeded;
   }
@@ -76,14 +103,20 @@ export function TaskPanel() {
       <TaskForm
         disabled={isWorkspaceLoading}
         editingTask={editingTask}
-        key={editingTask ? `${editingTask.id}:${editingTask.updatedAt}:${editingTask.isCompleted}` : "new"}
-        onCancelEdit={() => setEditingTaskId(null)}
+        isEditingSharedTask={editingTaskTarget?.source === "shared"}
+        key={editingTask
+          ? `${editingTaskTarget?.source}:${editingTask.id}:${editingTask.updatedAt}:${editingTask.isCompleted}`
+          : "new"}
+        onCancelEdit={() => setEditingTaskTarget(null)}
         onCreate={createTask}
         onUpdate={updateEditingTask}
       />
 
       <div aria-atomic="true" aria-live="polite" className="task-feedback">
         {message && <p className="notice is-success">{message}</p>}
+        {sharedTasksMessage && (
+          <p className="notice is-success">{sharedTasksMessage}</p>
+        )}
         {error && <p className="notice is-error" role="alert">{error}</p>}
         {sharedTasksError && (
           <p className="notice is-error" role="alert">{sharedTasksError}</p>
@@ -98,9 +131,11 @@ export function TaskPanel() {
       <TaskList
         isLoading={isWorkspaceLoading}
         onDelete={deleteTask}
-        onEdit={setEditingTaskId}
+        onEdit={(id) => setEditingTaskTarget({ id, source: "owned" })}
+        onEditShared={(id) => setEditingTaskTarget({ id, source: "shared" })}
         onShare={setSharingTaskId}
         onToggle={toggleTask}
+        onToggleShared={toggleSharedTask}
         sharedTasks={sharedWithYou}
         tasks={tasks}
       />

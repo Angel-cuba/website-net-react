@@ -5,6 +5,18 @@ import { Button } from "../../../components/button";
 import { getMinimumDueDateInputValue, toDateTimeInputValue } from "../../../utils/date";
 import type { TaskItem, TaskPayload } from "../types/task";
 
+type TaskFormItem = Pick<
+  TaskItem,
+  | "id"
+  | "title"
+  | "category"
+  | "description"
+  | "dueDate"
+  | "isCompleted"
+  | "priority"
+  | "status"
+>;
+
 const createEmptyTaskForm = (): TaskPayload => ({
   title: "",
   category: "Backend",
@@ -17,15 +29,17 @@ const createEmptyTaskForm = (): TaskPayload => ({
 
 type TaskFormProps = {
   disabled: boolean;
-  editingTask: TaskItem | null;
+  editingTask: TaskFormItem | null;
+  isEditingSharedTask: boolean;
   onCancelEdit: () => void;
-  onCreate: (payload: TaskPayload) => Promise<boolean>;
+  onCreate?: (payload: TaskPayload) => Promise<boolean>;
   onUpdate: (payload: TaskPayload) => Promise<boolean>;
 };
 
 export function TaskForm({
   disabled,
   editingTask,
+  isEditingSharedTask,
   onCancelEdit,
   onCreate,
   onUpdate,
@@ -56,7 +70,11 @@ export function TaskForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const succeeded = editingTask ? await onUpdate(form) : await onCreate(form);
+    const succeeded = editingTask
+      ? await onUpdate(form)
+      : onCreate
+        ? await onCreate(form)
+        : false;
 
     if (succeeded) {
       setForm(createEmptyTaskForm());
@@ -71,7 +89,13 @@ export function TaskForm({
     <section aria-labelledby="task-form-heading" className="task-composer">
       <div className="subsection-heading">
         <div>
-          <h2 id="task-form-heading">{editingTask ? "Edit task" : "Create task"}</h2>
+          <h2 id="task-form-heading">
+            {editingTask
+              ? isEditingSharedTask
+                ? "Edit shared task"
+                : "Edit task"
+              : "Create task"}
+          </h2>
           {editingTask && <span>Task #{editingTask.id}</span>}
         </div>
         {editingTask && (

@@ -1096,7 +1096,9 @@ textarea:focus {
 }
 
 .shared-task-card__heading,
-.shared-task-card__heading > div,
+.shared-task-card__title-row,
+.shared-task-card__title-copy,
+.shared-task-card__actions,
 .shared-access,
 .shared-task-card__meta,
 .shared-task-card__meta > span,
@@ -1106,14 +1108,45 @@ textarea:focus {
 }
 
 .shared-task-card__heading {
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: var(--space-4);
 }
 
-.shared-task-card__heading > div {
+.shared-task-card__title-row {
+  min-width: 0;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.shared-task-card__title-copy {
   min-width: 0;
   align-items: flex-start;
   flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.shared-task-card__check {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  cursor: pointer;
+}
+
+.shared-task-card__check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-primary);
+}
+
+.shared-task-card__actions {
+  flex: 0 0 auto;
   gap: var(--space-2);
 }
 

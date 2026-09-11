@@ -11,8 +11,10 @@ type TaskListProps = {
   tasks: TaskItem[];
   onDelete: (taskId: number) => Promise<boolean>;
   onEdit: (taskId: number) => void;
+  onEditShared: (taskId: number) => void;
   onShare: (taskId: number) => void;
   onToggle: (task: TaskItem) => Promise<void>;
+  onToggleShared: (task: SharedTaskItem) => Promise<void>;
 };
 
 export function TaskList({
@@ -21,8 +23,10 @@ export function TaskList({
   tasks,
   onDelete,
   onEdit,
+  onEditShared,
   onShare,
   onToggle,
+  onToggleShared,
 }: TaskListProps) {
   if (isLoading && tasks.length === 0 && sharedTasks.length === 0) {
     return (
@@ -55,7 +59,15 @@ export function TaskList({
           task={task}
         />
       ))}
-      {sharedTasks.map((task) => <SharedTaskCard key={`shared-${task.id}`} task={task} />)}
+      {sharedTasks.map((task) => (
+        <SharedTaskCard
+          disabled={isLoading}
+          key={`shared-${task.id}`}
+          onEdit={onEditShared}
+          onToggle={onToggleShared}
+          task={task}
+        />
+      ))}
     </div>
   );
 }

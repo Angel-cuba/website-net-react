@@ -5,17 +5,27 @@ import {
   CheckCircle2,
   Circle,
   Clock3,
+  Pencil,
   Share2,
   UserRound,
 } from "lucide-react";
+import { IconButton } from "../../../components/icon-button";
 import { formatDate } from "../../../utils/date";
 import type { SharedTaskItem } from "../types/shared-task";
 
 type SharedTaskCardProps = {
+  disabled: boolean;
+  onEdit: (taskId: number) => void;
+  onToggle: (task: SharedTaskItem) => Promise<void>;
   task: SharedTaskItem;
 };
 
-export function SharedTaskCard({ task }: SharedTaskCardProps) {
+export function SharedTaskCard({
+  disabled,
+  onEdit,
+  onToggle,
+  task,
+}: SharedTaskCardProps) {
   const [currentTime] = useState(Date.now);
   const isOverdue = Boolean(
     !task.isCompleted && task.dueDate && new Date(task.dueDate).getTime() < currentTime,
@@ -49,17 +59,45 @@ export function SharedTaskCard({ task }: SharedTaskCardProps) {
       className={`shared-task-card ${task.isCompleted ? "is-completed" : ""} ${isOverdue ? "is-overdue" : ""}`}
     >
       <div className="shared-task-card__heading">
-        <div>
-          <h3>{task.title}</h3>
-          <span className={`task-state task-state--${stateClass}`}>
-            <StateIcon aria-hidden="true" />
-            {stateLabel}
-          </span>
+        <div className="shared-task-card__title-row">
+          {task.canEdit && (
+            <label
+              className="shared-task-card__check"
+              title={task.isCompleted ? "Mark as pending" : "Mark as completed"}
+            >
+              <input
+                aria-label={`${task.isCompleted ? "Reopen" : "Complete"} shared task ${task.title}`}
+                checked={task.isCompleted}
+                disabled={disabled}
+                onChange={() => void onToggle(task)}
+                type="checkbox"
+              />
+            </label>
+          )}
+          <div className="shared-task-card__title-copy">
+            <h3>{task.title}</h3>
+            <span className={`task-state task-state--${stateClass}`}>
+              <StateIcon aria-hidden="true" />
+              {stateLabel}
+            </span>
+          </div>
         </div>
-        <span className={`shared-access shared-access--${task.canEdit ? "edit" : "view"}`}>
-          <Share2 aria-hidden="true" />
-          Shared · {task.canEdit ? "Can edit" : "View only"}
-        </span>
+        <div className="shared-task-card__actions">
+          <span className={`shared-access shared-access--${task.canEdit ? "edit" : "view"}`}>
+            <Share2 aria-hidden="true" />
+            Shared · {task.canEdit ? "Can edit" : "View only"}
+          </span>
+          {task.canEdit && (
+            <IconButton
+              aria-label={`Edit shared task ${task.title}`}
+              disabled={disabled}
+              onClick={() => onEdit(task.id)}
+              type="button"
+            >
+              <Pencil aria-hidden="true" />
+            </IconButton>
+          )}
+        </div>
       </div>
 
       <p className="shared-task-card__description">
