@@ -92,6 +92,28 @@ namespace Tasks.Controllers
             return NoContent();
         }
 
+        [HttpPatch("{id:int}/access/{accessId:int}")]
+        public async Task<IActionResult> UpdateTaskAccessPermission(
+            int id,
+            int accessId,
+            [FromBody] UpdateTaskAccessRequest request
+        )
+        {
+            var updated = await _service.UpdateTaskAccessPermission(
+                id,
+                accessId,
+                request.CanEdit!.Value,
+                _currentUserService.UserId
+            );
+
+            if (!updated)
+            {
+                return NotFound(ApiResponse<object>.Fail("Task access not found."));
+            }
+
+            return NoContent();
+        }
+
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetTask(int id)
         {

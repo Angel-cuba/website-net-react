@@ -157,6 +157,32 @@ namespace Tasks.Services
             return true;
         }
 
+        public async Task<bool> UpdateTaskAccessPermission(
+            int taskId,
+            int accessId,
+            bool canEdit,
+            int ownerUserId
+        )
+        {
+            var affectedUserId = await _repository.UpdateTaskAccessPermission(
+                taskId,
+                accessId,
+                canEdit,
+                ownerUserId
+            );
+
+            if (affectedUserId is not int userId)
+            {
+                return false;
+            }
+
+            await Task.WhenAll(
+                _realtimeNotifier.SharedTasksChanged(userId),
+                _realtimeNotifier.TaskSharingChanged(ownerUserId)
+            );
+            return true;
+        }
+
         private Task NotifySharedTasksChanged(IEnumerable<int> userIds)
         {
             return Task.WhenAll(userIds.Select(_realtimeNotifier.SharedTasksChanged));

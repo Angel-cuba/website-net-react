@@ -12,6 +12,12 @@ namespace Tasks.Interfaces
         Task<TaskModel> CreateTask(TaskModel task, int ownerUserId);
         Task<TaskModel> UpdateTask(TaskModel task, int ownerUserId);
         Task DeleteTask(int id, int ownerUserId);
+        Task<bool> UpdateTaskAccessPermission(
+            int taskId,
+            int accessId,
+            bool canEdit,
+            int ownerUserId
+        );
         Task<bool> RevokeTaskAccess(int taskId, int accessId, int ownerUserId);
     }
 }

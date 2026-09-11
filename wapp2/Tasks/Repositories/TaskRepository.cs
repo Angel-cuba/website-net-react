@@ -360,5 +360,35 @@ namespace Tasks.Repositories
                 }
             );
         }
+
+        public async Task<int?> UpdateTaskAccessPermission(
+            int taskId,
+            int accessId,
+            bool canEdit,
+            int ownerUserId
+        )
+        {
+            using var db = _sqlConnectionFactory.CreateConnection();
+
+            return await db.QuerySingleOrDefaultAsync<int?>(
+                """
+                UPDATE access
+                SET CanEdit = @CanEdit
+                OUTPUT INSERTED.UserId
+                FROM dbo.TaskAccess access
+                INNER JOIN dbo.Tasks task ON task.Id = access.TaskId
+                WHERE access.Id = @AccessId
+                  AND access.TaskId = @TaskId
+                  AND task.OwnerUserId = @OwnerUserId
+                """,
+                new
+                {
+                    TaskId = taskId,
+                    AccessId = accessId,
+                    CanEdit = canEdit,
+                    OwnerUserId = ownerUserId
+                }
+            );
+        }
     }
 }
