@@ -272,13 +272,24 @@ public class InvitationRepository(ISqlConnectionFactory sqlConnectionFactory) : 
         }
     }
 
-    public async Task<bool> DeletePendingInvitation(int invitationId, int invitedByUserId)
+    public async Task<TaskInvitationModel?> DeletePendingInvitation(
+        int invitationId,
+        int invitedByUserId
+    )
     {
         using var db = sqlConnectionFactory.CreateConnection();
 
-        var deletedRows = await db.ExecuteAsync(
+        return await db.QuerySingleOrDefaultAsync<TaskInvitationModel>(
             """
             DELETE invitation
+            OUTPUT DELETED.Id,
+                   DELETED.TaskId,
+                   DELETED.InvitedUserId,
+                   DELETED.InvitedEmail,
+                   DELETED.InvitedByUserId,
+                   DELETED.Status,
+                   DELETED.CreatedAt,
+                   DELETED.RespondedAt
             FROM dbo.TaskInvitations invitation
             INNER JOIN dbo.Tasks task ON task.Id = invitation.TaskId
             WHERE invitation.Id = @InvitationId
@@ -293,8 +304,6 @@ public class InvitationRepository(ISqlConnectionFactory sqlConnectionFactory) : 
                 PendingStatus = InvitationStatuses.Pending
             }
         );
-
-        return deletedRows > 0;
     }
 
     private static async Task<TaskInvitationDetailsModel> GetInvitationDetails(

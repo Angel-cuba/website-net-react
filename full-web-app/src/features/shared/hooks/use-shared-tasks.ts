@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError } from "../../../lib/http-client";
 import { getErrorMessage } from "../../../utils/errors";
+import { useRealtime } from "../../../hooks/use-realtime";
 import { useAuth } from "../../auth";
 import { getSharedTasks } from "../api/shared-tasks-api";
 import type { SharedTaskItem } from "../types/shared-task";
@@ -8,6 +9,7 @@ import type { SharedTaskItem } from "../types/shared-task";
 export function useSharedTasks() {
   const { expireSession, isAuthenticated, user } = useAuth();
   const userId = user?.id;
+  const { sharedTasksRevision } = useRealtime();
   const [sharedTasks, setSharedTasks] = useState<SharedTaskItem[]>([]);
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -59,7 +61,13 @@ export function useSharedTasks() {
     return () => {
       isCancelled = true;
     };
-  }, [handleRequestError, isAuthenticated, loadSharedTasks, userId]);
+  }, [
+    handleRequestError,
+    isAuthenticated,
+    loadSharedTasks,
+    sharedTasksRevision,
+    userId,
+  ]);
 
   async function refreshSharedTasks(): Promise<boolean> {
     if (!isAuthenticated || !userId) return false;

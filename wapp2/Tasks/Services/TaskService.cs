@@ -2,16 +2,22 @@ using Tasks.Models;
 using Tasks.DTOs;
 using Tasks.Repositories;
 using Tasks.Interfaces;
+using Wapp2.Notifications.Interfaces;
 
 namespace Tasks.Services
 {
     public class TaskService : ITaskService
     {
         private readonly ITaskRepository _repository;
+        private readonly IRealtimeNotifier _realtimeNotifier;
 
-        public TaskService(ITaskRepository repository)
+        public TaskService(
+            ITaskRepository repository,
+            IRealtimeNotifier realtimeNotifier
+        )
         {
             _repository = repository;
+            _realtimeNotifier = realtimeNotifier;
         }
 
         public async Task<IEnumerable<TaskModel>> GetTasks(int ownerUserId)
@@ -89,7 +95,13 @@ namespace Tasks.Services
             {
                 throw new KeyNotFoundException($"Task with Id {taskModel.Id} not found.");
             }
-            return await _repository.UpdateTask(taskModel, ownerUserId);
+            var sharedUserIds = (
+                await _repository.GetTaskAccessUserIds(taskModel.Id, ownerUserId)
+            ).ToList();
+            var updatedTask = await _repository.UpdateTask(taskModel, ownerUserId);
+
+            await NotifySharedTasksChanged(sharedUserIds);
+            return updatedTask;
         }
 
         public async Task DeleteTask(int id, int ownerUserId)
@@ -99,12 +111,38 @@ namespace Tasks.Services
             {
                 throw new KeyNotFoundException($"Task with Id {id} not found.");
             }
+            var sharedUserIds = (
+                await _repository.GetTaskAccessUserIds(id, ownerUserId)
+            ).ToList();
             await _repository.DeleteTask(id, ownerUserId);
+            await NotifySharedTasksChanged(sharedUserIds);
         }
 
-        public Task<bool> RevokeTaskAccess(int taskId, int accessId, int ownerUserId)
+        public async Task<bool> RevokeTaskAccess(
+            int taskId,
+            int accessId,
+            int ownerUserId
+        )
         {
-            return _repository.DeleteTaskAccess(taskId, accessId, ownerUserId);
+            var revokedUserId = await _repository.DeleteTaskAccess(
+                taskId,
+                accessId,
+                ownerUserId
+            );
+
+            if (revokedUserId is not int userId)
+            {
+                return false;
+            }
+
+            await _realtimeNotifier.SharedTasksChanged(userId);
+            await _realtimeNotifier.TaskSharingChanged(ownerUserId);
+            return true;
+        }
+
+        private Task NotifySharedTasksChanged(IEnumerable<int> userIds)
+        {
+            return Task.WhenAll(userIds.Select(_realtimeNotifier.SharedTasksChanged));
         }
 
         private static SharedTaskResponse MapSharedTaskResponse(SharedTaskDetailsModel task)

@@ -14,5 +14,5 @@ public interface IInvitationRepository
         int invitedUserId,
         string decision
     );
-    Task<bool> DeletePendingInvitation(int invitationId, int invitedByUserId);
+    Task<TaskInvitationModel?> DeletePendingInvitation(int invitationId, int invitedByUserId);
 }

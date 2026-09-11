@@ -11,6 +11,7 @@ import type {
 } from "../../features/invitations/types/invitation";
 import { ApiError } from "../../lib/http-client";
 import { getErrorMessage } from "../../utils/errors";
+import { useRealtime } from "../../hooks/use-realtime";
 import { InvitationsContext } from "./invitations-context";
 
 type InvitationsProviderProps = {
@@ -20,6 +21,7 @@ type InvitationsProviderProps = {
 export function InvitationsProvider({ children }: InvitationsProviderProps) {
   const { expireSession, isAuthenticated, user } = useAuth();
   const userId = user?.id;
+  const { invitationsRevision } = useRealtime();
   const [invitations, setInvitations] = useState<InvitationItem[]>([]);
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -75,7 +77,13 @@ export function InvitationsProvider({ children }: InvitationsProviderProps) {
     return () => {
       isCancelled = true;
     };
-  }, [handleRequestError, isAuthenticated, loadInvitations, userId]);
+  }, [
+    handleRequestError,
+    invitationsRevision,
+    isAuthenticated,
+    loadInvitations,
+    userId,
+  ]);
 
   useEffect(() => {
     if (!message) return;

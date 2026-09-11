@@ -4,6 +4,7 @@ using Tasks.Repositories;
 using Wapp2.Invitations.DTOs;
 using Wapp2.Invitations.Interfaces;
 using Wapp2.Invitations.Models;
+using Wapp2.Notifications.Interfaces;
 using Wapp2.Shared.Middleware;
 using Wapp2.Users.Interfaces;
 
@@ -12,7 +13,8 @@ namespace Wapp2.Invitations.Services;
 public class InvitationService(
     IInvitationRepository invitationRepository,
     ITaskRepository taskRepository,
-    IUserRepository userRepository
+    IUserRepository userRepository,
+    IRealtimeNotifier realtimeNotifier
 ) : IInvitationService
 {
     public async Task<InvitationResponse> CreateInvitation(
@@ -75,6 +77,11 @@ public class InvitationService(
                     InvitedByUserId = currentUserId
                 }
             );
+
+            if (invitation.InvitedUserId is int invitedUserId)
+            {
+                await realtimeNotifier.InvitationsChanged(invitedUserId);
+            }
 
             return MapResponse(invitation);
         }
@@ -145,12 +152,30 @@ public class InvitationService(
             );
         }
 
+        await realtimeNotifier.InvitationsChanged(currentUserId);
+        await realtimeNotifier.TaskSharingChanged(updatedInvitation.InvitedByUserId);
+
+        if (decision == InvitationStatuses.Accepted)
+        {
+            await realtimeNotifier.SharedTasksChanged(currentUserId);
+        }
+
         return MapResponse(updatedInvitation);
     }
 
-    public Task<bool> CancelInvitation(int invitationId, int currentUserId)
+    public async Task<bool> CancelInvitation(int invitationId, int currentUserId)
     {
-        return invitationRepository.DeletePendingInvitation(invitationId, currentUserId);
+        var deletedInvitation = await invitationRepository.DeletePendingInvitation(
+            invitationId,
+            currentUserId
+        );
+
+        if (deletedInvitation?.InvitedUserId is int invitedUserId)
+        {
+            await realtimeNotifier.InvitationsChanged(invitedUserId);
+        }
+
+        return deletedInvitation != null;
     }
 
     private static InvitationResponse MapResponse(TaskInvitationDetailsModel invitation)

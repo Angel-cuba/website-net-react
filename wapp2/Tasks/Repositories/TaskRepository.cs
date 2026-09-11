@@ -62,6 +62,25 @@ namespace Tasks.Repositories
             );
         }
 
+        public async Task<IEnumerable<int>> GetTaskAccessUserIds(
+            int taskId,
+            int ownerUserId
+        )
+        {
+            using var db = _sqlConnectionFactory.CreateConnection();
+
+            return await db.QueryAsync<int>(
+                """
+                SELECT access.UserId
+                FROM dbo.TaskAccess access
+                INNER JOIN dbo.Tasks task ON task.Id = access.TaskId
+                WHERE access.TaskId = @TaskId
+                  AND task.OwnerUserId = @OwnerUserId
+                """,
+                new { TaskId = taskId, OwnerUserId = ownerUserId }
+            );
+        }
+
         public async Task<TaskSharingDetailsModel?> GetTaskSharing(
             int taskId,
             int ownerUserId
@@ -240,7 +259,7 @@ namespace Tasks.Repositories
             }
         }
 
-        public async Task<bool> DeleteTaskAccess(
+        public async Task<int?> DeleteTaskAccess(
             int taskId,
             int accessId,
             int ownerUserId
@@ -248,9 +267,10 @@ namespace Tasks.Repositories
         {
             using var db = _sqlConnectionFactory.CreateConnection();
 
-            var deletedRows = await db.ExecuteAsync(
+            return await db.QuerySingleOrDefaultAsync<int?>(
                 """
                 DELETE access
+                OUTPUT DELETED.UserId
                 FROM dbo.TaskAccess access
                 INNER JOIN dbo.Tasks task ON task.Id = access.TaskId
                 WHERE access.Id = @AccessId
@@ -264,8 +284,6 @@ namespace Tasks.Repositories
                     OwnerUserId = ownerUserId
                 }
             );
-
-            return deletedRows > 0;
         }
     }
 }

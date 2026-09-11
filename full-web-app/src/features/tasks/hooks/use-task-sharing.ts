@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError } from "../../../lib/http-client";
 import { getErrorMessage } from "../../../utils/errors";
+import { useRealtime } from "../../../hooks/use-realtime";
 import { useAuth } from "../../auth";
 import {
   cancelInvitation,
@@ -15,6 +16,7 @@ import type { TaskSharing } from "../types/task-sharing";
 export function useTaskSharing(taskId: number | null) {
   const { expireSession, isAuthenticated, user } = useAuth();
   const userId = user?.id;
+  const { taskSharingRevision } = useRealtime();
   const [sharing, setSharing] = useState<TaskSharing | null>(null);
   const [loadedTaskId, setLoadedTaskId] = useState<number | null>(null);
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
@@ -71,7 +73,14 @@ export function useTaskSharing(taskId: number | null) {
     return () => {
       isCancelled = true;
     };
-  }, [handleRequestError, isAuthenticated, loadTaskSharing, taskId, userId]);
+  }, [
+    handleRequestError,
+    isAuthenticated,
+    loadTaskSharing,
+    taskId,
+    taskSharingRevision,
+    userId,
+  ]);
 
   useEffect(() => {
     if (!message) return;

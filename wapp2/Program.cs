@@ -15,6 +15,9 @@ using Wapp2.Users.Services;
 using Wapp2.Invitations.Interfaces;
 using Wapp2.Invitations.Repositories;
 using Wapp2.Invitations.Services;
+using Wapp2.Notifications.Hubs;
+using Wapp2.Notifications.Interfaces;
+using Wapp2.Notifications.Services;
 using Wapp2.Shared.Middleware;
 using Wapp2.Shared.Security;
 using Wapp2.Shared.DTOs;
@@ -24,6 +27,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddSignalR();
 
 
 // Add repository and service registrations
@@ -37,6 +41,7 @@ builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IInvitationRepository, InvitationRepository>();
 builder.Services.AddScoped<IInvitationService, InvitationService>();
+builder.Services.AddScoped<IRealtimeNotifier, SignalRRealtimeNotifier>();
 
 // Add authentication services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -67,6 +72,19 @@ builder.Services
 
         options.Events = new JwtBearerEvents
         {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrEmpty(accessToken)
+                    && path.StartsWithSegments("/hubs/notifications"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            },
             OnTokenValidated = async context =>
             {
                 var userIdClaim = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -147,5 +165,6 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 app.Run();
