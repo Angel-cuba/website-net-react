@@ -90,6 +90,14 @@ Vite 8 requiere Node `^20.19.0` o `>=22.12.0`.
 El paquete OpenAPI esta instalado, pero el proyecto todavia no configura un
 documento OpenAPI ni una interfaz Swagger en `Program.cs`.
 
+### Testing backend
+
+| Tecnologia o paquete | Version | Funcion |
+| --- | --- | --- |
+| xUnit | `2.9.3` | Tests unitarios del dominio y servicios |
+| Microsoft.NET.Test.Sdk | `17.14.1` | Descubrimiento y ejecucion de tests .NET |
+| coverlet.collector | `6.0.4` | Recoleccion de cobertura |
+
 ## 5. Estructura del repositorio
 
 ```text
@@ -110,6 +118,8 @@ documento OpenAPI ni una interfaz Swagger en `Program.cs`.
 |   |   `-- utils/
 |   |-- package.json
 |   `-- vite.config.ts
+|-- tests/
+|   `-- Wapp2.Tests/               # tests unitarios del backend
 |-- wapp2/
 |   |-- Auth/
 |   |-- Users/
@@ -492,6 +502,7 @@ Backend:
 
 ```bash
 dotnet build wapp2/wapp2.csproj --no-restore
+dotnet test tests/Wapp2.Tests/Wapp2.Tests.csproj --no-restore
 ```
 
 Frontend:
@@ -502,9 +513,10 @@ npm run lint
 npm run build
 ```
 
-El repositorio no contiene actualmente proyectos de test .NET ni scripts de
-test frontend. Los builds y lint no sustituyen pruebas unitarias, de integracion
-o end-to-end.
+La suite `Wapp2.Tests` cubre inicialmente autorizacion de edicion, permisos,
+revocacion de acceso y emision de eventos del servicio de tareas. Todavia no hay
+scripts de test frontend ni cobertura de integracion HTTP, SQL Server o
+end-to-end. Los builds y lint no sustituyen esas pruebas.
 
 ## 17. Diagnostico rapido
 
@@ -568,8 +580,8 @@ sin cerrar al menos estos puntos:
 4. Hacer CORS configurable por ambiente y desplegar solo mediante HTTPS.
 5. Agregar rate limiting, especialmente a register y login.
 6. Activar OpenAPI/Swagger o publicar un contrato versionado.
-7. Agregar tests unitarios, integracion con SQL Server y E2E de los flujos
-   multiusuario.
+7. Ampliar los tests unitarios y agregar integracion HTTP/SQL Server, frontend y
+   E2E de los flujos multiusuario.
 8. Incorporar CI para build, lint, tests, migraciones y analisis de seguridad.
 9. Agregar health checks, logging estructurado y observabilidad.
 10. Configurar un backplane SignalR si se ejecutan varias instancias.

@@ -144,15 +144,17 @@ Abrir `http://localhost:5173`.
 
 ```bash
 dotnet build wapp2/wapp2.csproj --no-restore
+dotnet test tests/Wapp2.Tests/Wapp2.Tests.csproj --no-restore
 
 cd full-web-app
 npm run lint
 npm run build
 ```
 
-El repositorio no tiene aun una suite automatizada de tests. Consulta la seccion
-de produccion del [Project Guide](docs/PROJECT_GUIDE.md#18-estado-de-produccion-y-trabajo-pendiente)
-para conocer las brechas actuales.
+La suite backend cubre inicialmente las reglas de autorizacion y notificaciones
+del servicio de tareas. Consulta la seccion de produccion del
+[Project Guide](docs/PROJECT_GUIDE.md#18-estado-de-produccion-y-trabajo-pendiente)
+para conocer las brechas de pruebas de integracion, frontend y end-to-end.
 
 ## Seguridad y permisos
 
