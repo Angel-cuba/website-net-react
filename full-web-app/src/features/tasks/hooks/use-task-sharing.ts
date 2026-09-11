@@ -10,6 +10,7 @@ import {
 import {
   getTaskSharing,
   revokeTaskAccess,
+  updateTaskAccessPermission,
 } from "../api/task-sharing-api";
 import type { TaskSharing } from "../types/task-sharing";
 
@@ -156,6 +157,28 @@ export function useTaskSharing(taskId: number | null) {
     });
   }
 
+  async function updateAccessPermission(
+    accessId: number,
+    canEdit: boolean,
+  ): Promise<boolean> {
+    if (!isAuthenticated || taskId === null) return false;
+
+    return runSharingAction(async () => {
+      await updateTaskAccessPermission(taskId, accessId, canEdit);
+      setSharing((currentSharing) =>
+        currentSharing
+          ? {
+              ...currentSharing,
+              members: currentSharing.members.map((member) =>
+                member.accessId === accessId ? { ...member, canEdit } : member,
+              ),
+            }
+          : null,
+      );
+      setMessage(canEdit ? "Edit access granted." : "Edit access removed.");
+    });
+  }
+
   async function runSharingAction(action: () => Promise<void>): Promise<boolean> {
     setError("");
     setMessage("");
@@ -194,5 +217,6 @@ export function useTaskSharing(taskId: number | null) {
     inviteUser,
     cancelPendingInvitation,
     revokeAccess,
+    updateAccessPermission,
   };
 }

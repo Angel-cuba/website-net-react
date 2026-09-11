@@ -33,6 +33,7 @@ export function TaskSharingDialog({ onClose, task }: TaskSharingDialogProps) {
     inviteUser,
     cancelPendingInvitation,
     revokeAccess,
+    updateAccessPermission,
   } = useTaskSharing(task.id);
 
   useEffect(() => {
@@ -204,9 +205,20 @@ export function TaskSharingDialog({ onClose, task }: TaskSharingDialogProps) {
                           name={member.name}
                         />
                         <div className="sharing-list__meta">
-                          <span className="access-level">
-                            {member.canEdit ? "Can edit" : "View only"}
-                          </span>
+                          <label className="access-permission">
+                            <input
+                              checked={member.canEdit}
+                              disabled={isSubmitting}
+                              onChange={(event) =>
+                                void updateAccessPermission(
+                                  member.accessId,
+                                  event.target.checked,
+                                )
+                              }
+                              type="checkbox"
+                            />
+                            <span>Can edit</span>
+                          </label>
                           <IconButton
                             aria-label={`Remove access for ${member.email}`}
                             disabled={isSubmitting}
