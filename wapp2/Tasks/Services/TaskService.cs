@@ -1,8 +1,10 @@
+using System.Net;
 using Tasks.Models;
 using Tasks.DTOs;
 using Tasks.Repositories;
 using Tasks.Interfaces;
 using Wapp2.Notifications.Interfaces;
+using Wapp2.Shared.Middleware;
 
 namespace Tasks.Services
 {
@@ -96,23 +98,51 @@ namespace Tasks.Services
             return await _repository.CreateTask(taskModel, ownerUserId);
         }
 
-        public async Task<TaskModel> UpdateTask(TaskModel taskModel, int ownerUserId)
+        public async Task<TaskModel> UpdateTask(TaskModel taskModel, int userId)
         {
-            var existingTask = await _repository.GetTask(taskModel.Id, ownerUserId);
-            if (existingTask == null)
+            var updateAccess = await _repository.GetTaskUpdateAccess(
+                taskModel.Id,
+                userId
+            );
+            if (updateAccess == null)
             {
                 throw new KeyNotFoundException($"Task with Id {taskModel.Id} not found.");
             }
+            if (!updateAccess.CanEdit)
+            {
+                throw new ErrorHandlingMiddlewareException(
+                    "You do not have permission to edit this task.",
+                    HttpStatusCode.Forbidden
+                );
+            }
+
+            var updatedTask = await _repository.UpdateTask(taskModel, userId);
+            if (updatedTask == null)
+            {
+                throw new ErrorHandlingMiddlewareException(
+                    "You do not have permission to edit this task.",
+                    HttpStatusCode.Forbidden
+                );
+            }
+
             var sharedUserIds = (
-                await _repository.GetTaskAccessUserIds(taskModel.Id, ownerUserId)
+                await _repository.GetTaskAccessUserIds(
+                    taskModel.Id,
+                    updateAccess.OwnerUserId
+                )
             ).ToList();
             var invitedUserIds = (
-                await _repository.GetTaskInvitationUserIds(taskModel.Id, ownerUserId)
+                await _repository.GetTaskInvitationUserIds(
+                    taskModel.Id,
+                    updateAccess.OwnerUserId
+                )
             ).ToList();
-            var updatedTask = await _repository.UpdateTask(taskModel, ownerUserId);
 
-            await NotifySharedTasksChanged(sharedUserIds);
-            await NotifyInvitationsChanged(invitedUserIds);
+            await Task.WhenAll(
+                NotifySharedTasksChanged(sharedUserIds),
+                NotifyInvitationsChanged(invitedUserIds),
+                _realtimeNotifier.TaskSharingChanged(updateAccess.OwnerUserId)
+            );
             return updatedTask;
         }
 

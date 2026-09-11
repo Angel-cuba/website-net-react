@@ -156,6 +156,37 @@ namespace Tasks.Repositories
             );
         }
 
+        public async Task<TaskUpdateAccessDetailsModel?> GetTaskUpdateAccess(
+            int taskId,
+            int userId
+        )
+        {
+            using var db = _sqlConnectionFactory.CreateConnection();
+
+            return await db.QuerySingleOrDefaultAsync<TaskUpdateAccessDetailsModel>(
+                """
+                SELECT task.OwnerUserId,
+                       CAST(
+                           CASE
+                               WHEN task.OwnerUserId = @UserId OR access.CanEdit = 1 THEN 1
+                               ELSE 0
+                           END
+                           AS bit
+                       ) AS CanEdit
+                FROM dbo.Tasks task
+                LEFT JOIN dbo.TaskAccess access
+                    ON access.TaskId = task.Id
+                   AND access.UserId = @UserId
+                WHERE task.Id = @TaskId
+                  AND (
+                      task.OwnerUserId = @UserId
+                      OR access.Id IS NOT NULL
+                  )
+                """,
+                new { TaskId = taskId, UserId = userId }
+            );
+        }
+
         public async Task<TaskSharingDetailsModel?> GetTaskSharing(
             int taskId,
             int ownerUserId
@@ -246,12 +277,12 @@ namespace Tasks.Repositories
             return task;
         }
 
-        public async Task<TaskModel> UpdateTask(TaskModel task, int ownerUserId)
+        public async Task<TaskModel?> UpdateTask(TaskModel task, int userId)
         {
             using var db = _sqlConnectionFactory.CreateConnection();
-            await db.ExecuteAsync(
+            return await db.QuerySingleOrDefaultAsync<TaskModel>(
                 """
-                UPDATE dbo.Tasks
+                UPDATE task
                 SET Title = @Title,
                     Category = @Category,
                     Description = @Description,
@@ -260,7 +291,29 @@ namespace Tasks.Repositories
                     Priority = @Priority,
                     Status = @Status,
                     UpdatedAt = SYSUTCDATETIME()
-                WHERE Id = @Id AND OwnerUserId = @OwnerUserId
+                OUTPUT INSERTED.Id,
+                       INSERTED.Title,
+                       INSERTED.Category,
+                       INSERTED.Description,
+                       INSERTED.OwnerUserId,
+                       INSERTED.DueDate,
+                       INSERTED.IsCompleted,
+                       INSERTED.Priority,
+                       INSERTED.Status,
+                       INSERTED.CreatedAt,
+                       INSERTED.UpdatedAt
+                FROM dbo.Tasks task
+                WHERE task.Id = @Id
+                  AND (
+                      task.OwnerUserId = @UserId
+                      OR EXISTS (
+                          SELECT 1
+                          FROM dbo.TaskAccess access
+                          WHERE access.TaskId = task.Id
+                            AND access.UserId = @UserId
+                            AND access.CanEdit = 1
+                      )
+                  )
                 """,
                 new
                 {
@@ -272,12 +325,9 @@ namespace Tasks.Repositories
                     task.IsCompleted,
                     task.Priority,
                     task.Status,
-                    OwnerUserId = ownerUserId
+                    UserId = userId
                 }
             );
-            task.OwnerUserId = ownerUserId;
-
-            return task;
         }
 
         public async Task DeleteTask(int id, int ownerUserId)

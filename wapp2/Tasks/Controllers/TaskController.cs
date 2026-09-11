@@ -137,11 +137,6 @@ namespace Tasks.Controllers
         public async Task<IActionResult> UpdateTask(int id, [FromBody] TaskModel task)
         {
             task.Id = id;
-            if (await _service.GetTask(id, _currentUserService.UserId) == null)
-            {
-                return NotFound();
-            }
-
             var updatedTask = await _service.UpdateTask(task, _currentUserService.UserId);
 
             return Ok(updatedTask);
