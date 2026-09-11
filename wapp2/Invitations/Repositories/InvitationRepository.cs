@@ -76,6 +76,15 @@ public class InvitationRepository(ISqlConnectionFactory sqlConnectionFactory) : 
 
         return await db.QueryAsync<TaskInvitationDetailsModel>(
             """
+            WITH RankedInvitations AS (
+                SELECT invitation.*,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY invitation.TaskId, invitation.InvitedUserId
+                           ORDER BY invitation.CreatedAt DESC, invitation.Id DESC
+                       ) AS InvitationRank
+                FROM dbo.TaskInvitations invitation
+                WHERE invitation.InvitedUserId = @InvitedUserId
+            )
             SELECT invitation.Id,
                    invitation.TaskId,
                    task.Title AS TaskTitle,
@@ -97,11 +106,11 @@ public class InvitationRepository(ISqlConnectionFactory sqlConnectionFactory) : 
                        ) THEN 1 ELSE 0 END
                        AS bit
                    ) AS HasActiveAccess
-            FROM dbo.TaskInvitations invitation
+            FROM RankedInvitations invitation
             INNER JOIN dbo.Tasks task ON task.Id = invitation.TaskId
             INNER JOIN dbo.Users inviter ON inviter.Id = invitation.InvitedByUserId
             LEFT JOIN dbo.UserProfiles profile ON profile.UserId = inviter.Id
-            WHERE invitation.InvitedUserId = @InvitedUserId
+            WHERE invitation.InvitationRank = 1
             ORDER BY CASE WHEN invitation.Status = @PendingStatus THEN 0 ELSE 1 END,
                      invitation.CreatedAt DESC
             """,
