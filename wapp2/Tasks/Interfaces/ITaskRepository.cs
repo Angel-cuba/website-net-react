@@ -8,6 +8,7 @@ namespace Tasks.Repositories
         Task<IEnumerable<TaskModel>> GetTasks(int ownerUserId);
         Task<IEnumerable<SharedTaskDetailsModel>> GetSharedTasks(int userId);
         Task<IEnumerable<int>> GetTaskAccessUserIds(int taskId, int ownerUserId);
+        Task<IEnumerable<int>> GetTaskInvitationUserIds(int taskId, int ownerUserId);
         Task<TaskSharingDetailsModel?> GetTaskSharing(int taskId, int ownerUserId);
         Task<TaskModel> CreateTask(TaskModel task, int ownerUserId);
         Task<TaskModel> UpdateTask(TaskModel task, int ownerUserId);

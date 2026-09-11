@@ -81,6 +81,26 @@ namespace Tasks.Repositories
             );
         }
 
+        public async Task<IEnumerable<int>> GetTaskInvitationUserIds(
+            int taskId,
+            int ownerUserId
+        )
+        {
+            using var db = _sqlConnectionFactory.CreateConnection();
+
+            return await db.QueryAsync<int>(
+                """
+                SELECT DISTINCT invitation.InvitedUserId
+                FROM dbo.TaskInvitations invitation
+                INNER JOIN dbo.Tasks task ON task.Id = invitation.TaskId
+                WHERE invitation.TaskId = @TaskId
+                  AND invitation.InvitedUserId IS NOT NULL
+                  AND task.OwnerUserId = @OwnerUserId
+                """,
+                new { TaskId = taskId, OwnerUserId = ownerUserId }
+            );
+        }
+
         public async Task<TaskSharingDetailsModel?> GetTaskSharing(
             int taskId,
             int ownerUserId

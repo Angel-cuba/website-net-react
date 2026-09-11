@@ -98,9 +98,13 @@ namespace Tasks.Services
             var sharedUserIds = (
                 await _repository.GetTaskAccessUserIds(taskModel.Id, ownerUserId)
             ).ToList();
+            var invitedUserIds = (
+                await _repository.GetTaskInvitationUserIds(taskModel.Id, ownerUserId)
+            ).ToList();
             var updatedTask = await _repository.UpdateTask(taskModel, ownerUserId);
 
             await NotifySharedTasksChanged(sharedUserIds);
+            await NotifyInvitationsChanged(invitedUserIds);
             return updatedTask;
         }
 
@@ -114,8 +118,12 @@ namespace Tasks.Services
             var sharedUserIds = (
                 await _repository.GetTaskAccessUserIds(id, ownerUserId)
             ).ToList();
+            var invitedUserIds = (
+                await _repository.GetTaskInvitationUserIds(id, ownerUserId)
+            ).ToList();
             await _repository.DeleteTask(id, ownerUserId);
             await NotifySharedTasksChanged(sharedUserIds);
+            await NotifyInvitationsChanged(invitedUserIds);
         }
 
         public async Task<bool> RevokeTaskAccess(
@@ -144,6 +152,11 @@ namespace Tasks.Services
         private Task NotifySharedTasksChanged(IEnumerable<int> userIds)
         {
             return Task.WhenAll(userIds.Select(_realtimeNotifier.SharedTasksChanged));
+        }
+
+        private Task NotifyInvitationsChanged(IEnumerable<int> userIds)
+        {
+            return Task.WhenAll(userIds.Select(_realtimeNotifier.InvitationsChanged));
         }
 
         private static SharedTaskResponse MapSharedTaskResponse(SharedTaskDetailsModel task)
