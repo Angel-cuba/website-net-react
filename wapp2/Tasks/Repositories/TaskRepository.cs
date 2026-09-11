@@ -62,6 +62,61 @@ namespace Tasks.Repositories
             );
         }
 
+        public async Task<IEnumerable<OwnedSharedTaskDetailsModel>> GetOwnedSharedTasks(
+            int ownerUserId
+        )
+        {
+            using var db = _sqlConnectionFactory.CreateConnection();
+
+            return await db.QueryAsync<OwnedSharedTaskDetailsModel>(
+                """
+                SELECT task.Id,
+                       task.Title,
+                       task.Category,
+                       task.Description,
+                       task.OwnerUserId,
+                       task.DueDate,
+                       task.IsCompleted,
+                       task.Priority,
+                       task.Status,
+                       task.CreatedAt,
+                       task.UpdatedAt,
+                       (
+                           SELECT COUNT(*)
+                           FROM dbo.TaskAccess access
+                           WHERE access.TaskId = task.Id
+                       ) AS ActiveAccessCount,
+                       (
+                           SELECT COUNT(*)
+                           FROM dbo.TaskInvitations invitation
+                           WHERE invitation.TaskId = task.Id
+                             AND invitation.Status = @PendingStatus
+                       ) AS PendingInvitationCount
+                FROM dbo.Tasks task
+                WHERE task.OwnerUserId = @OwnerUserId
+                  AND (
+                      EXISTS (
+                          SELECT 1
+                          FROM dbo.TaskAccess access
+                          WHERE access.TaskId = task.Id
+                      )
+                      OR EXISTS (
+                          SELECT 1
+                          FROM dbo.TaskInvitations invitation
+                          WHERE invitation.TaskId = task.Id
+                            AND invitation.Status = @PendingStatus
+                      )
+                  )
+                ORDER BY COALESCE(task.UpdatedAt, task.CreatedAt) DESC
+                """,
+                new
+                {
+                    OwnerUserId = ownerUserId,
+                    PendingStatus = Wapp2.Invitations.Models.InvitationStatuses.Pending
+                }
+            );
+        }
+
         public async Task<IEnumerable<int>> GetTaskAccessUserIds(
             int taskId,
             int ownerUserId

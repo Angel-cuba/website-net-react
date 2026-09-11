@@ -42,6 +42,18 @@ namespace Tasks.Controllers
             ));
         }
 
+        [HttpGet("shared/owned")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<OwnedSharedTaskResponse>>>>
+            GetOwnedSharedTasks()
+        {
+            var tasks = await _service.GetOwnedSharedTasks(_currentUserService.UserId);
+
+            return Ok(ApiResponse<IEnumerable<OwnedSharedTaskResponse>>.Ok(
+                tasks,
+                "Owned shared tasks loaded successfully."
+            ));
+        }
+
         [HttpGet("{id:int}/sharing")]
         public async Task<ActionResult<ApiResponse<TaskSharingResponse>>> GetTaskSharing(
             int id

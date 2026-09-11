@@ -31,6 +31,14 @@ namespace Tasks.Services
             return tasks.Select(MapSharedTaskResponse);
         }
 
+        public async Task<IEnumerable<OwnedSharedTaskResponse>> GetOwnedSharedTasks(
+            int ownerUserId
+        )
+        {
+            var tasks = await _repository.GetOwnedSharedTasks(ownerUserId);
+            return tasks.Select(MapOwnedSharedTaskResponse);
+        }
+
         public async Task<TaskSharingResponse?> GetTaskSharing(
             int taskId,
             int ownerUserId
@@ -182,6 +190,27 @@ namespace Tasks.Services
                 OwnerAvatarUrl = task.OwnerAvatarUrl,
                 CanEdit = task.CanEdit,
                 SharedAt = task.SharedAt
+            };
+        }
+
+        private static OwnedSharedTaskResponse MapOwnedSharedTaskResponse(
+            OwnedSharedTaskDetailsModel task
+        )
+        {
+            return new OwnedSharedTaskResponse
+            {
+                Id = task.Id,
+                Title = task.Title,
+                Category = task.Category,
+                Description = task.Description,
+                DueDate = task.DueDate,
+                IsCompleted = task.IsCompleted,
+                Priority = task.Priority,
+                Status = task.Status,
+                CreatedAt = task.CreatedAt,
+                UpdatedAt = task.UpdatedAt,
+                ActiveAccessCount = task.ActiveAccessCount,
+                PendingInvitationCount = task.PendingInvitationCount
             };
         }
 

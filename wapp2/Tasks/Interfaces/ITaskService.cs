@@ -6,6 +6,7 @@ namespace Tasks.Interfaces
     {
         Task<IEnumerable<TaskModel>> GetTasks(int ownerUserId);
         Task<IEnumerable<SharedTaskResponse>> GetSharedTasks(int userId);
+        Task<IEnumerable<OwnedSharedTaskResponse>> GetOwnedSharedTasks(int ownerUserId);
         Task<TaskSharingResponse?> GetTaskSharing(int taskId, int ownerUserId);
         Task<TaskModel?> GetTask(int id, int ownerUserId);
         Task<TaskModel> CreateTask(TaskModel task, int ownerUserId);
