@@ -859,6 +859,10 @@ textarea:focus {
   border-left-color: var(--color-border-strong);
 }
 
+.invitation-card--revoked {
+  border-left-color: var(--color-warning);
+}
+
 .invitation-card__icon {
   display: grid;
   width: 38px;
@@ -877,6 +881,11 @@ textarea:focus {
 .invitation-card--rejected .invitation-card__icon {
   background: var(--color-surface-muted);
   color: var(--color-text-muted);
+}
+
+.invitation-card--revoked .invitation-card__icon {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
 }
 
 .invitation-card__icon svg {
@@ -944,6 +953,11 @@ textarea:focus {
 .invitation-status--rejected {
   background: var(--color-surface-muted);
   color: var(--color-text-muted);
+}
+
+.invitation-status--revoked {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
 }
 
 .invitation-card__details {

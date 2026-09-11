@@ -10,6 +10,7 @@ export type InvitationItem = {
   invitedByEmail: string;
   invitedByName: string;
   status: InvitationStatus;
+  hasActiveAccess: boolean;
   createdAt: string;
   respondedAt: string | null;
 };

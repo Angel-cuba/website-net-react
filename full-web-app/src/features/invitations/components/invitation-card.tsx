@@ -4,6 +4,7 @@ import {
   Clock3,
   LoaderCircle,
   Mail,
+  ShieldOff,
   UserRound,
   X,
   XCircle,
@@ -28,11 +29,18 @@ export function InvitationCard({
   onRespond,
 }: InvitationCardProps) {
   const isPending = invitation.status === "pending";
+  const isAccessRevoked =
+    invitation.status === "accepted" && !invitation.hasActiveAccess;
   const inviterName = invitation.invitedByName || invitation.invitedByEmail;
-  const StatusIcon = invitation.status === "accepted" ? CheckCircle2 : XCircle;
+  const displayStatus = isAccessRevoked ? "revoked" : invitation.status;
+  const StatusIcon = isAccessRevoked
+    ? ShieldOff
+    : invitation.status === "accepted"
+      ? CheckCircle2
+      : XCircle;
 
   return (
-    <article className={`invitation-card invitation-card--${invitation.status}`}>
+    <article className={`invitation-card invitation-card--${displayStatus}`}>
       <div className="invitation-card__icon">
         <Mail aria-hidden="true" />
       </div>
@@ -44,9 +52,13 @@ export function InvitationCard({
             <h3>{invitation.taskTitle}</h3>
           </div>
           {!isPending && (
-            <span className={`invitation-status invitation-status--${invitation.status}`}>
+            <span className={`invitation-status invitation-status--${displayStatus}`}>
               <StatusIcon aria-hidden="true" />
-              {invitation.status === "accepted" ? "Accepted" : "Declined"}
+              {isAccessRevoked
+                ? "Access revoked"
+                : invitation.status === "accepted"
+                  ? "Accepted"
+                  : "Declined"}
             </span>
           )}
         </div>

@@ -87,7 +87,16 @@ public class InvitationRepository(ISqlConnectionFactory sqlConnectionFactory) : 
                    COALESCE(profile.LastName, '') AS InvitedByLastName,
                    invitation.Status,
                    invitation.CreatedAt,
-                   invitation.RespondedAt
+                   invitation.RespondedAt,
+                   CAST(
+                       CASE WHEN EXISTS (
+                           SELECT 1
+                           FROM dbo.TaskAccess access
+                           WHERE access.TaskId = invitation.TaskId
+                             AND access.UserId = invitation.InvitedUserId
+                       ) THEN 1 ELSE 0 END
+                       AS bit
+                   ) AS HasActiveAccess
             FROM dbo.TaskInvitations invitation
             INNER JOIN dbo.Tasks task ON task.Id = invitation.TaskId
             INNER JOIN dbo.Users inviter ON inviter.Id = invitation.InvitedByUserId
@@ -325,7 +334,16 @@ public class InvitationRepository(ISqlConnectionFactory sqlConnectionFactory) : 
                    COALESCE(profile.LastName, '') AS InvitedByLastName,
                    invitation.Status,
                    invitation.CreatedAt,
-                   invitation.RespondedAt
+                   invitation.RespondedAt,
+                   CAST(
+                       CASE WHEN EXISTS (
+                           SELECT 1
+                           FROM dbo.TaskAccess access
+                           WHERE access.TaskId = invitation.TaskId
+                             AND access.UserId = invitation.InvitedUserId
+                       ) THEN 1 ELSE 0 END
+                       AS bit
+                   ) AS HasActiveAccess
             FROM dbo.TaskInvitations invitation
             INNER JOIN dbo.Tasks task ON task.Id = invitation.TaskId
             INNER JOIN dbo.Users inviter ON inviter.Id = invitation.InvitedByUserId

@@ -9,6 +9,7 @@ public class InvitationResponse
     public string InvitedByEmail { get; set; } = string.Empty;
     public string InvitedByName { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public bool HasActiveAccess { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? RespondedAt { get; set; }
 }

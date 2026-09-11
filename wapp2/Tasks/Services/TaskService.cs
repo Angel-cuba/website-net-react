@@ -136,6 +136,7 @@ namespace Tasks.Services
             }
 
             await _realtimeNotifier.SharedTasksChanged(userId);
+            await _realtimeNotifier.InvitationsChanged(userId);
             await _realtimeNotifier.TaskSharingChanged(ownerUserId);
             return true;
         }

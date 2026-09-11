@@ -197,6 +197,7 @@ public class InvitationService(
                 ? invitation.InvitedByEmail
                 : inviterName,
             Status = invitation.Status,
+            HasActiveAccess = invitation.HasActiveAccess,
             CreatedAt = invitation.CreatedAt,
             RespondedAt = invitation.RespondedAt
         };
