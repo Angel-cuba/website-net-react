@@ -153,8 +153,8 @@ npm run build
 
 La suite backend cubre inicialmente autenticacion, generacion y validacion JWT,
 identidad basada en claims, cuenta y perfil de usuario, y las reglas de
-autorizacion y notificaciones del servicio de tareas. Consulta la seccion de
-produccion del
+invitaciones, autorizacion y notificaciones del servicio de tareas. Consulta la
+seccion de produccion del
 [Project Guide](docs/PROJECT_GUIDE.md#18-estado-de-produccion-y-trabajo-pendiente)
 para conocer las brechas de pruebas de integracion, frontend y end-to-end.
 
