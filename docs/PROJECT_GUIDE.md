@@ -90,6 +90,15 @@ Vite 8 requiere Node `^20.19.0` o `>=22.12.0`.
 El paquete OpenAPI esta instalado, pero el proyecto todavia no configura un
 documento OpenAPI ni una interfaz Swagger en `Program.cs`.
 
+### Testing backend
+
+| Tecnologia o paquete | Version | Funcion |
+| --- | --- | --- |
+| xUnit | `2.9.3` | Tests unitarios del dominio y servicios |
+| Microsoft.AspNetCore.Mvc.Testing | `10.0.11` | Tests HTTP con host ASP.NET Core en memoria |
+| Microsoft.NET.Test.Sdk | `17.14.1` | Descubrimiento y ejecucion de tests .NET |
+| coverlet.collector | `6.0.4` | Recoleccion de cobertura |
+
 ## 5. Estructura del repositorio
 
 ```text
@@ -110,6 +119,8 @@ documento OpenAPI ni una interfaz Swagger en `Program.cs`.
 |   |   `-- utils/
 |   |-- package.json
 |   `-- vite.config.ts
+|-- tests/
+|   `-- Wapp2.Tests/               # tests unitarios del backend
 |-- wapp2/
 |   |-- Auth/
 |   |-- Users/
@@ -492,6 +503,7 @@ Backend:
 
 ```bash
 dotnet build wapp2/wapp2.csproj --no-restore
+dotnet test tests/Wapp2.Tests/Wapp2.Tests.csproj --no-restore
 ```
 
 Frontend:
@@ -502,9 +514,15 @@ npm run lint
 npm run build
 ```
 
-El repositorio no contiene actualmente proyectos de test .NET ni scripts de
-test frontend. Los builds y lint no sustituyen pruebas unitarias, de integracion
-o end-to-end.
+La suite `Wapp2.Tests` cubre inicialmente registro y login, hashing de password,
+generacion y validacion JWT, identidad basada en claims, cuenta y perfil de
+usuario, ciclo de invitaciones, autorizacion de edicion, permisos, revocacion de
+acceso y emision de eventos del servicio de tareas. Las pruebas HTTP verifican
+el contrato `401`, firma y expiracion del JWT, cuentas eliminadas, propagacion de
+identidad y autenticacion de la negociacion SignalR. Todavia no hay scripts de
+test frontend ni cobertura de integracion con SQL Server o end-to-end. En
+particular, la traduccion de conflictos de clave unica `2601/2627` requiere una
+prueba con SQL Server. Los builds y lint no sustituyen esas pruebas.
 
 ## 17. Diagnostico rapido
 
@@ -568,8 +586,8 @@ sin cerrar al menos estos puntos:
 4. Hacer CORS configurable por ambiente y desplegar solo mediante HTTPS.
 5. Agregar rate limiting, especialmente a register y login.
 6. Activar OpenAPI/Swagger o publicar un contrato versionado.
-7. Agregar tests unitarios, integracion con SQL Server y E2E de los flujos
-   multiusuario.
+7. Ampliar los tests unitarios y HTTP, y agregar integracion con SQL Server,
+   frontend y E2E de los flujos multiusuario.
 8. Incorporar CI para build, lint, tests, migraciones y analisis de seguridad.
 9. Agregar health checks, logging estructurado y observabilidad.
 10. Configurar un backplane SignalR si se ejecutan varias instancias.
