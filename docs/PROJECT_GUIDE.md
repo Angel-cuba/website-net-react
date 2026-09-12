@@ -535,11 +535,15 @@ de sesion, reintentos y eventos en tiempo real, aislamiento entre usuarios,
 respuesta a invitaciones y limpieza automatica de mensajes. Tambien verifica el
 formulario y listado de tareas, la convivencia de tareas propias y compartidas,
 los permisos `View only` y `Can edit`, y las tarjetas de invitacion. Todavia
-faltan paneles, enrutamiento y componentes interactivos restantes. Los hooks de
+faltan paneles y componentes interactivos restantes. Los hooks de
 tareas propias, shared tasks y administracion de acceso ya verifican carga,
 refresco por SignalR, aislamiento por usuario o tarea, mutaciones, permisos y
 errores HTTP. El flujo de perfil tambien cubre carga aislada por usuario,
 normalizacion, edicion, cancelacion, errores y borrado de cuenta con password.
+El router y shell verifican proteccion guest, normalizacion de rutas, navegacion
+SPA e historial, badge de invitaciones, menu movil, identidad y logout.
+La configuracion mantiene umbrales globales minimos de 70% para lineas y
+statements, 65% para funciones y 55% para branches.
 
 La suite `Wapp2.Tests` cubre inicialmente registro y login, hashing de password,
 generacion y validacion JWT, identidad basada en claims, cuenta y perfil de

@@ -55,8 +55,12 @@ token, fechas, errores, normalizacion de tareas y los providers de autenticacion
 SignalR e invitaciones. Tambien cubre el formulario y listado de tareas y las
 tarjetas de invitacion, junto con el hook CRUD de tareas propias. Los hooks de
 shared tasks y administracion de acceso tambien estan cubiertos. Los paneles,
-enrutamiento y componentes restantes se incorporan por fases; el estado, edicion
-y borrado de perfil ya forman parte de la regresion.
+componentes restantes y E2E se incorporan por fases; el estado, edicion y borrado
+de perfil, junto con el router y shell autenticado, ya forman parte de la
+regresion.
+
+La cobertura exige como minimo 70% de lineas y statements, 65% de funciones y
+55% de branches.
 
 ## Estructura
 
