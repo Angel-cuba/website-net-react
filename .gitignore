@@ -23,6 +23,7 @@ TestResults/
 node_modules/
 dist/
 build/
+coverage/
 .vite/
 
 # Database / backups
