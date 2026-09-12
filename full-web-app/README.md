@@ -55,7 +55,8 @@ token, fechas, errores, normalizacion de tareas y los providers de autenticacion
 SignalR e invitaciones. Tambien cubre el formulario y listado de tareas y las
 tarjetas de invitacion, junto con el hook CRUD de tareas propias. Los hooks de
 shared tasks y administracion de acceso tambien estan cubiertos. Los paneles,
-perfil y componentes restantes se incorporan por fases.
+enrutamiento y componentes restantes se incorporan por fases; el estado, edicion
+y borrado de perfil ya forman parte de la regresion.
 
 ## Estructura
 
