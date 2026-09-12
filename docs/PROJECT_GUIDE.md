@@ -11,6 +11,9 @@ Este documento describe el sistema que existe actualmente en el repositorio. No
 es una lista de ideas futuras. Las limitaciones y el trabajo pendiente para
 produccion se documentan de forma separada al final.
 
+La preparacion y ejecucion de una primera publicacion se detallan en el
+[Deployment Plan](DEPLOYMENT_PLAN.md).
+
 ## 2. Resumen funcional
 
 Una persona puede:
@@ -117,7 +120,8 @@ documento OpenAPI ni una interfaz Swagger en `Program.cs`.
 .
 |-- README.md
 |-- docs/
-|   `-- PROJECT_GUIDE.md
+|   |-- PROJECT_GUIDE.md
+|   `-- DEPLOYMENT_PLAN.md
 |-- database/
 |   `-- migrations/
 |-- full-web-app/
@@ -438,7 +442,7 @@ cero. La migracion de sharing presupone que las tablas base ya existen.
 ### Requisitos
 
 - .NET SDK 10;
-- Node `^20.19.0` o `>=22.12.0`;
+- Node `>=24.15.0 <25`;
 - npm;
 - SQL Server accesible;
 - base `Wapp2DB` con el esquema base y rol `User`.
@@ -534,14 +538,15 @@ los providers de autenticacion, SignalR e invitaciones. Esto incluye expiracion
 de sesion, reintentos y eventos en tiempo real, aislamiento entre usuarios,
 respuesta a invitaciones y limpieza automatica de mensajes. Tambien verifica el
 formulario y listado de tareas, la convivencia de tareas propias y compartidas,
-los permisos `View only` y `Can edit`, y las tarjetas de invitacion. Todavia
-faltan paneles y componentes interactivos restantes. Los hooks de
-tareas propias, shared tasks y administracion de acceso ya verifican carga,
-refresco por SignalR, aislamiento por usuario o tarea, mutaciones, permisos y
-errores HTTP. El flujo de perfil tambien cubre carga aislada por usuario,
-normalizacion, edicion, cancelacion, errores y borrado de cuenta con password.
-El router y shell verifican proteccion guest, normalizacion de rutas, navegacion
-SPA e historial, badge de invitaciones, menu movil, identidad y logout.
+los permisos `View only` y `Can edit`, las tarjetas de invitacion y el panel de
+perfil. Los hooks de tareas propias, shared tasks y administracion de acceso
+cubren carga, refresco por SignalR, aislamiento por usuario o tarea, mutaciones,
+permisos y errores HTTP. El flujo de perfil tambien cubre carga aislada por
+usuario, normalizacion, edicion, cancelacion, errores y borrado de cuenta con
+password. El router y shell verifican proteccion guest, normalizacion de rutas,
+navegacion SPA e historial, badge de invitaciones, menu movil, identidad y
+logout. Esta cobertura de jsdom no sustituye una prueba E2E en un navegador
+contra la API y SQL Server reales.
 La configuracion mantiene umbrales globales minimos de 70% para lineas y
 statements, 65% para funciones y 55% para branches.
 
@@ -604,29 +609,44 @@ El acceso existe, pero el owner no ha concedido `CanEdit` o acaba de retirarlo.
 Los endpoints de administracion son exclusivos del owner y ocultan recursos no
 autorizados con `404`.
 
-## 18. Estado de produccion y trabajo pendiente
+## 18. Proximos pasos y estado de produccion
 
-La aplicacion es funcional en local, pero no debe considerarse production-ready
-sin cerrar al menos estos puntos:
+La aplicacion es funcional y tiene una base de regresion local. El siguiente
+hito es un ambiente Azure de estudio desplegado manualmente. CI no es necesario
+en esta etapa y queda como mejora opcional para cuando aumente la frecuencia de
+deploys o el numero de colaboradores.
 
-1. Crear una migracion baseline reproducible para toda la base de datos.
-2. Agregar validacion backend para fecha minima, email, password y reglas de los
-   payloads de tareas.
-3. Decidir una estrategia de sesion adecuada para produccion; el JWT vive ahora
-   en `localStorage`, con el riesgo asociado ante XSS.
-4. Hacer CORS configurable por ambiente y desplegar solo mediante HTTPS.
+### Bloqueos para la primera publicacion
+
+1. Crear una migracion baseline reproducible para toda la base de datos y
+   probarla sobre Azure SQL vacio.
+2. Hacer CORS configurable por ambiente y aceptar solo la URL HTTPS de la SPA.
+3. Agregar health checks de proceso y SQL Server, junto con logging estructurado.
+4. Replicar en backend la fecha minima de cinco horas y completar la validacion
+   de email, password y payloads de tareas.
 5. Agregar rate limiting, especialmente a register y login.
-6. Activar OpenAPI/Swagger o publicar un contrato versionado.
-7. Ampliar los tests unitarios, HTTP y frontend, y agregar integracion con SQL
-   Server y E2E de los flujos multiusuario.
-8. Incorporar CI para build, lint, tests, migraciones y analisis de seguridad.
-9. Agregar health checks, logging estructurado y observabilidad.
-10. Configurar un backplane SignalR si se ejecutan varias instancias.
-11. Definir emails reales y notificaciones persistentes si el producto los
-    necesita.
-12. Implementar upload de avatar; actualmente solo se guarda una URL externa.
-13. Revisar identificadores heredados como `RootNamespace=EmployeeManagementApi`.
-14. Documentar backup, restore, rotacion de secretos y despliegue de migraciones.
+6. Agregar el fallback de rutas requerido por el hosting estatico de la SPA.
+7. Configurar secretos fuera del repositorio y verificar que los errores no
+   filtren informacion sensible.
+
+El orden, comandos, smoke test y rollback estan en el
+[Deployment Plan](DEPLOYMENT_PLAN.md).
+
+### Despues de la primera prueba publicada
+
+1. Agregar integracion real con SQL Server y E2E de navegador para los flujos
+   multiusuario.
+2. Decidir una estrategia de sesion mas resistente a XSS; el JWT vive ahora en
+   `localStorage`.
+3. Activar OpenAPI/Swagger o publicar un contrato versionado.
+4. Configurar un backplane SignalR solo si se ejecutan varias instancias.
+5. Definir emails reales y notificaciones persistentes si el producto los
+   necesita.
+6. Implementar upload de avatar; actualmente solo se guarda una URL externa.
+7. Revisar identificadores heredados como `RootNamespace=EmployeeManagementApi`.
+8. Ensayar backup, restore, rotacion de secretos y migraciones compensatorias.
+9. Considerar CI para automatizar la puerta local cuando aporte valor al flujo
+   de trabajo.
 
 ## 19. Decisiones que deben mantenerse
 

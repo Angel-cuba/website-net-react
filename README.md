@@ -53,6 +53,9 @@ La referencia completa del sistema esta en:
 - [Project Guide](docs/PROJECT_GUIDE.md): arquitectura, flujos, permisos, API,
   modelo de datos, realtime, stack, configuracion, diagnostico y pendientes de
   produccion.
+- [Deployment Plan](docs/DEPLOYMENT_PLAN.md): bloqueos previos, arquitectura
+  Azure, despliegue manual, smoke test multiusuario, rollback y cierre del
+  ambiente.
 - [Frontend README](full-web-app/README.md): estructura y comandos especificos
   de React/Vite.
 
@@ -83,7 +86,7 @@ Las versiones exactas y la funcion de cada paquete estan documentadas en el
 ## Requisitos locales
 
 - .NET SDK 10;
-- Node `^20.19.0` o `>=22.12.0`;
+- Node `>=24.15.0 <25`;
 - npm;
 - SQL Server con la base `Wapp2DB` y su esquema base.
 
@@ -152,13 +155,20 @@ npm test
 npm run build
 ```
 
-La suite backend cubre inicialmente autenticacion, generacion y validacion JWT,
-identidad basada en claims, cuenta y perfil de usuario, y las reglas de
-invitaciones, autorizacion y notificaciones del servicio de tareas. Consulta la
-seccion de produccion del
-[Project Guide](docs/PROJECT_GUIDE.md#18-estado-de-produccion-y-trabajo-pendiente)
-para conocer las brechas de pruebas con SQL Server, hooks y componentes
-frontend, y end-to-end.
+Las suites cubren autenticacion, generacion y validacion JWT, identidad basada en
+claims, cuenta y perfil de usuario, tareas, invitaciones, permisos, realtime,
+routing y los principales flujos de componentes y hooks. Todavia faltan pruebas
+de integracion reales contra SQL Server y end-to-end de navegador. Consulta los
+[proximos pasos](docs/PROJECT_GUIDE.md#18-proximos-pasos-y-estado-de-produccion)
+y el [plan de despliegue](docs/DEPLOYMENT_PLAN.md).
+
+## Proximo hito
+
+El siguiente objetivo es publicar un ambiente Azure de estudio mediante un
+proceso manual. CI queda aplazado hasta que el proyecto tenga despliegues
+frecuentes o mas colaboradores. Antes del primer deploy se deben cerrar la
+migracion baseline, configuracion CORS por ambiente, health checks, validacion
+backend y proteccion de los endpoints publicos.
 
 ## Seguridad y permisos
 

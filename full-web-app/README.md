@@ -5,6 +5,9 @@ Cliente web de Wapp2 construido con React, TypeScript y Vite.
 Para comprender el flujo completo, el backend, la base de datos y los permisos,
 consulta el [Project Guide](../docs/PROJECT_GUIDE.md).
 
+El procedimiento propuesto para publicar la SPA sin CI esta en el
+[Deployment Plan](../docs/DEPLOYMENT_PLAN.md).
+
 ## Requisitos
 
 - Node `>=24.15.0 <25` (usar `nvm use` dentro de esta carpeta);
