@@ -7,7 +7,7 @@ consulta el [Project Guide](../docs/PROJECT_GUIDE.md).
 
 ## Requisitos
 
-- Node `^20.19.0` o `>=22.12.0`;
+- Node `>=24.15.0 <25` (usar `nvm use` dentro de esta carpeta);
 - npm;
 - API Wapp2 disponible en `http://localhost:5104`.
 
@@ -33,6 +33,9 @@ contener secretos.
 ```bash
 npm run dev
 npm run lint
+npm test
+npm run test:watch
+npm run test:coverage
 npm run build
 npm run preview
 ```
@@ -41,10 +44,23 @@ npm run preview
 | --- | --- |
 | `npm run dev` | inicia Vite en desarrollo |
 | `npm run lint` | ejecuta ESLint |
+| `npm test` | ejecuta una vez la suite Vitest |
+| `npm run test:watch` | ejecuta Vitest en modo interactivo |
+| `npm run test:coverage` | ejecuta tests y genera cobertura V8 |
 | `npm run build` | ejecuta TypeScript y genera el build |
 | `npm run preview` | sirve localmente el build generado |
 
-El proyecto no tiene todavia un script de tests.
+La suite verifica el cliente HTTP, autenticacion de requests, almacenamiento del
+token, fechas, errores, normalizacion de tareas y los providers de autenticacion,
+SignalR e invitaciones. Tambien cubre el formulario y listado de tareas y las
+tarjetas de invitacion, junto con el hook CRUD de tareas propias. Los hooks de
+shared tasks y administracion de acceso tambien estan cubiertos. Los paneles,
+componentes restantes y E2E se incorporan por fases; el estado, edicion y borrado
+de perfil, junto con el router y shell autenticado, ya forman parte de la
+regresion.
+
+La cobertura exige como minimo 70% de lineas y statements, 65% de funciones y
+55% de branches.
 
 ## Estructura
 
@@ -116,6 +132,7 @@ vuelven a consultar la API para recuperar el estado vigente desde SQL Server.
 - React y React DOM;
 - TypeScript;
 - Vite y `@vitejs/plugin-react`;
+- Vitest, jsdom y Testing Library;
 - `@microsoft/signalr`;
 - `lucide-react`;
 - ESLint y `typescript-eslint`.

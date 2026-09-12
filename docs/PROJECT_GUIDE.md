@@ -74,7 +74,19 @@ reemplace a SQL Server en el flujo actual.
 | `@types/react-dom` | `19.2.4` | Tipos de React DOM |
 | `globals` | `17.11.0` | Catalogo de globals para ESLint |
 
-Vite 8 requiere Node `^20.19.0` o `>=22.12.0`.
+El frontend fija Node `>=24.15.0 <25` para mantener Vite, Vitest y jsdom sobre
+una misma linea LTS reproducible.
+
+### Testing frontend
+
+| Tecnologia o paquete | Version declarada | Funcion |
+| --- | --- | --- |
+| Vitest | `5.0.0` | Runner de tests y mocks |
+| `@vitest/coverage-v8` | `5.0.0` | Cobertura frontend |
+| jsdom | `30.0.1` | DOM de navegador en Node |
+| React Testing Library | `16.3.3` | Pruebas de componentes por comportamiento |
+| `@testing-library/user-event` | `14.6.7` | Interacciones de usuario |
+| `@testing-library/jest-dom` | `7.0.1` | Asserts semanticos del DOM |
 
 ### Backend
 
@@ -511,18 +523,37 @@ Frontend:
 ```bash
 cd full-web-app
 npm run lint
+npm test
+npm run test:coverage
 npm run build
 ```
+
+La suite frontend cubre el cliente HTTP, autenticacion de requests,
+almacenamiento del token, fechas, errores, normalizacion de payloads de tareas y
+los providers de autenticacion, SignalR e invitaciones. Esto incluye expiracion
+de sesion, reintentos y eventos en tiempo real, aislamiento entre usuarios,
+respuesta a invitaciones y limpieza automatica de mensajes. Tambien verifica el
+formulario y listado de tareas, la convivencia de tareas propias y compartidas,
+los permisos `View only` y `Can edit`, y las tarjetas de invitacion. Todavia
+faltan paneles y componentes interactivos restantes. Los hooks de
+tareas propias, shared tasks y administracion de acceso ya verifican carga,
+refresco por SignalR, aislamiento por usuario o tarea, mutaciones, permisos y
+errores HTTP. El flujo de perfil tambien cubre carga aislada por usuario,
+normalizacion, edicion, cancelacion, errores y borrado de cuenta con password.
+El router y shell verifican proteccion guest, normalizacion de rutas, navegacion
+SPA e historial, badge de invitaciones, menu movil, identidad y logout.
+La configuracion mantiene umbrales globales minimos de 70% para lineas y
+statements, 65% para funciones y 55% para branches.
 
 La suite `Wapp2.Tests` cubre inicialmente registro y login, hashing de password,
 generacion y validacion JWT, identidad basada en claims, cuenta y perfil de
 usuario, ciclo de invitaciones, autorizacion de edicion, permisos, revocacion de
 acceso y emision de eventos del servicio de tareas. Las pruebas HTTP verifican
 el contrato `401`, firma y expiracion del JWT, cuentas eliminadas, propagacion de
-identidad y autenticacion de la negociacion SignalR. Todavia no hay scripts de
-test frontend ni cobertura de integracion con SQL Server o end-to-end. En
-particular, la traduccion de conflictos de clave unica `2601/2627` requiere una
-prueba con SQL Server. Los builds y lint no sustituyen esas pruebas.
+identidad y autenticacion de la negociacion SignalR. Todavia no hay cobertura de
+integracion con SQL Server o end-to-end. En particular, la traduccion de
+conflictos de clave unica `2601/2627` requiere una prueba con SQL Server. Los
+builds y lint no sustituyen esas pruebas.
 
 ## 17. Diagnostico rapido
 
@@ -586,8 +617,8 @@ sin cerrar al menos estos puntos:
 4. Hacer CORS configurable por ambiente y desplegar solo mediante HTTPS.
 5. Agregar rate limiting, especialmente a register y login.
 6. Activar OpenAPI/Swagger o publicar un contrato versionado.
-7. Ampliar los tests unitarios y HTTP, y agregar integracion con SQL Server,
-   frontend y E2E de los flujos multiusuario.
+7. Ampliar los tests unitarios, HTTP y frontend, y agregar integracion con SQL
+   Server y E2E de los flujos multiusuario.
 8. Incorporar CI para build, lint, tests, migraciones y analisis de seguridad.
 9. Agregar health checks, logging estructurado y observabilidad.
 10. Configurar un backplane SignalR si se ejecutan varias instancias.
