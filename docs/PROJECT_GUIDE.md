@@ -532,8 +532,10 @@ La suite frontend cubre el cliente HTTP, autenticacion de requests,
 almacenamiento del token, fechas, errores, normalizacion de payloads de tareas y
 los providers de autenticacion, SignalR e invitaciones. Esto incluye expiracion
 de sesion, reintentos y eventos en tiempo real, aislamiento entre usuarios,
-respuesta a invitaciones y limpieza automatica de mensajes. Todavia faltan hooks
-y componentes interactivos.
+respuesta a invitaciones y limpieza automatica de mensajes. Tambien verifica el
+formulario y listado de tareas, la convivencia de tareas propias y compartidas,
+los permisos `View only` y `Can edit`, y las tarjetas de invitacion. Todavia
+faltan hooks, paneles y componentes interactivos restantes.
 
 La suite `Wapp2.Tests` cubre inicialmente registro y login, hashing de password,
 generacion y validacion JWT, identidad basada en claims, cuenta y perfil de
