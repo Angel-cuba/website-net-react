@@ -12,6 +12,7 @@ internal sealed class UserRepositoryStub : IUserRepository
     public bool DeleteResult { get; init; }
     public int CreateUserCallCount { get; private set; }
     public int DeleteUserCallCount { get; private set; }
+    public int? LastUserIdLookup { get; private set; }
     public int? RolesRequestedForUserId { get; private set; }
     public int? DeletedUserId { get; private set; }
     public string? LastEmailLookup { get; private set; }
@@ -21,6 +22,7 @@ internal sealed class UserRepositoryStub : IUserRepository
 
     public Task<UserModel?> GetUser(int id)
     {
+        LastUserIdLookup = id;
         return Task.FromResult(UserById);
     }
 
