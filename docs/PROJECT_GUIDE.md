@@ -513,10 +513,11 @@ npm run lint
 npm run build
 ```
 
-La suite `Wapp2.Tests` cubre inicialmente autorizacion de edicion, permisos,
-revocacion de acceso y emision de eventos del servicio de tareas. Todavia no hay
-scripts de test frontend ni cobertura de integracion HTTP, SQL Server o
-end-to-end. Los builds y lint no sustituyen esas pruebas.
+La suite `Wapp2.Tests` cubre inicialmente registro y login, hashing de password,
+generacion y validacion JWT, identidad basada en claims, autorizacion de
+edicion, permisos, revocacion de acceso y emision de eventos del servicio de
+tareas. Todavia no hay scripts de test frontend ni cobertura de integracion
+HTTP, SQL Server o end-to-end. Los builds y lint no sustituyen esas pruebas.
 
 ## 17. Diagnostico rapido
 
