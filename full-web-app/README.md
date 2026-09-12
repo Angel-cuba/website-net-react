@@ -54,7 +54,8 @@ La suite verifica el cliente HTTP, autenticacion de requests, almacenamiento del
 token, fechas, errores, normalizacion de tareas y los providers de autenticacion,
 SignalR e invitaciones. Tambien cubre el formulario y listado de tareas y las
 tarjetas de invitacion, junto con el hook CRUD de tareas propias. Los hooks de
-sharing, paneles y componentes restantes se incorporan por fases.
+shared tasks y administracion de acceso tambien estan cubiertos. Los paneles,
+perfil y componentes restantes se incorporan por fases.
 
 ## Estructura
 

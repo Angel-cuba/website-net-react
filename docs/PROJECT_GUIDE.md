@@ -535,8 +535,10 @@ de sesion, reintentos y eventos en tiempo real, aislamiento entre usuarios,
 respuesta a invitaciones y limpieza automatica de mensajes. Tambien verifica el
 formulario y listado de tareas, la convivencia de tareas propias y compartidas,
 los permisos `View only` y `Can edit`, y las tarjetas de invitacion. Todavia
-faltan los hooks de sharing, paneles y componentes interactivos restantes; el
-hook CRUD de tareas propias ya verifica carga, refresco, mutaciones y errores.
+faltan los paneles, perfil y componentes interactivos restantes. Los hooks de
+tareas propias, shared tasks y administracion de acceso ya verifican carga,
+refresco por SignalR, aislamiento por usuario o tarea, mutaciones, permisos y
+errores HTTP.
 
 La suite `Wapp2.Tests` cubre inicialmente registro y login, hashing de password,
 generacion y validacion JWT, identidad basada en claims, cuenta y perfil de
