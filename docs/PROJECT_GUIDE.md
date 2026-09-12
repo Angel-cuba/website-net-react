@@ -528,9 +528,12 @@ npm run test:coverage
 npm run build
 ```
 
-La suite frontend cubre inicialmente el cliente HTTP, autenticacion de requests,
-almacenamiento del token, fechas, errores y normalizacion de payloads de tareas.
-Todavia faltan providers, hooks y componentes interactivos.
+La suite frontend cubre el cliente HTTP, autenticacion de requests,
+almacenamiento del token, fechas, errores, normalizacion de payloads de tareas y
+los providers de autenticacion, SignalR e invitaciones. Esto incluye expiracion
+de sesion, reintentos y eventos en tiempo real, aislamiento entre usuarios,
+respuesta a invitaciones y limpieza automatica de mensajes. Todavia faltan hooks
+y componentes interactivos.
 
 La suite `Wapp2.Tests` cubre inicialmente registro y login, hashing de password,
 generacion y validacion JWT, identidad basada en claims, cuenta y perfil de

@@ -157,8 +157,8 @@ identidad basada en claims, cuenta y perfil de usuario, y las reglas de
 invitaciones, autorizacion y notificaciones del servicio de tareas. Consulta la
 seccion de produccion del
 [Project Guide](docs/PROJECT_GUIDE.md#18-estado-de-produccion-y-trabajo-pendiente)
-para conocer las brechas de pruebas con SQL Server, componentes frontend y
-end-to-end.
+para conocer las brechas de pruebas con SQL Server, hooks y componentes
+frontend, y end-to-end.
 
 ## Seguridad y permisos
 

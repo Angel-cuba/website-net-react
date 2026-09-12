@@ -50,9 +50,10 @@ npm run preview
 | `npm run build` | ejecuta TypeScript y genera el build |
 | `npm run preview` | sirve localmente el build generado |
 
-La cobertura inicial verifica el cliente HTTP, autenticacion de requests,
-almacenamiento del token, fechas, errores y normalizacion de tareas. Los tests de
-providers, hooks y componentes se incorporan por fases.
+La suite verifica el cliente HTTP, autenticacion de requests, almacenamiento del
+token, fechas, errores, normalizacion de tareas y los providers de autenticacion,
+SignalR e invitaciones. Los hooks y componentes interactivos se incorporan por
+fases.
 
 ## Estructura
 
