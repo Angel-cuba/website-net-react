@@ -31,6 +31,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSignalR();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<IDatabaseHealthProbe, SqlDatabaseHealthProbe>();
 builder.Services
     .AddHealthChecks()

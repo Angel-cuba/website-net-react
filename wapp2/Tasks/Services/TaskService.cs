@@ -10,16 +10,20 @@ namespace Tasks.Services
 {
     public class TaskService : ITaskService
     {
+        private static readonly TimeSpan MinimumDueDateLeadTime = TimeSpan.FromHours(5);
         private readonly ITaskRepository _repository;
         private readonly IRealtimeNotifier _realtimeNotifier;
+        private readonly TimeProvider _timeProvider;
 
         public TaskService(
             ITaskRepository repository,
-            IRealtimeNotifier realtimeNotifier
+            IRealtimeNotifier realtimeNotifier,
+            TimeProvider timeProvider
         )
         {
             _repository = repository;
             _realtimeNotifier = realtimeNotifier;
+            _timeProvider = timeProvider;
         }
 
         public async Task<IEnumerable<TaskModel>> GetTasks(int ownerUserId)
@@ -95,6 +99,7 @@ namespace Tasks.Services
 
         public async Task<TaskModel> CreateTask(TaskModel taskModel, int ownerUserId)
         {
+            ValidateDueDate(taskModel);
             return await _repository.CreateTask(taskModel, ownerUserId);
         }
 
@@ -116,6 +121,7 @@ namespace Tasks.Services
                 );
             }
 
+            ValidateDueDate(taskModel);
             var updatedTask = await _repository.UpdateTask(taskModel, userId);
             if (updatedTask == null)
             {
@@ -221,6 +227,36 @@ namespace Tasks.Services
         private Task NotifyInvitationsChanged(IEnumerable<int> userIds)
         {
             return Task.WhenAll(userIds.Select(_realtimeNotifier.InvitationsChanged));
+        }
+
+        private void ValidateDueDate(TaskModel taskModel)
+        {
+            if (taskModel.DueDate is not DateTime dueDate)
+            {
+                return;
+            }
+
+            var dueDateUtc = dueDate.Kind switch
+            {
+                DateTimeKind.Utc => dueDate,
+                DateTimeKind.Local => dueDate.ToUniversalTime(),
+                DateTimeKind.Unspecified => DateTime.SpecifyKind(dueDate, DateTimeKind.Utc),
+                _ => dueDate
+            };
+            var minimumDueDate = _timeProvider
+                .GetUtcNow()
+                .UtcDateTime
+                .Add(MinimumDueDateLeadTime);
+
+            if (dueDateUtc < minimumDueDate)
+            {
+                throw new ErrorHandlingMiddlewareException(
+                    "Due date must be at least 5 hours from now.",
+                    HttpStatusCode.BadRequest
+                );
+            }
+
+            taskModel.DueDate = dueDateUtc;
         }
 
         private static SharedTaskResponse MapSharedTaskResponse(SharedTaskDetailsModel task)
