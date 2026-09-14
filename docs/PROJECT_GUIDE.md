@@ -655,13 +655,14 @@ deploys o el numero de colaboradores.
 3. `/health/live` comprueba el proceso sin SQL y `/health/ready` valida la
    conexion mediante una consulta ligera.
 4. El backend replica la fecha minima de cinco horas al crear y actualizar.
+5. El build de Vite incluye el fallback de rutas y headers iniciales para Azure
+   Static Web Apps.
 
 ### Pendiente para la primera publicacion controlada
 
-1. Agregar el fallback de rutas requerido por el hosting estatico de la SPA.
-2. Crear Azure SQL y aplicar baseline y migraciones sobre la base vacia.
-3. Configurar secretos, URLs HTTPS, WebSockets y health check en App Service.
-4. Publicar ambos artefactos y completar el smoke test multiusuario.
+1. Crear Azure SQL y aplicar baseline y migraciones sobre la base vacia.
+2. Configurar secretos, URLs HTTPS, WebSockets y health check en App Service.
+3. Publicar ambos artefactos y completar el smoke test multiusuario.
 
 La validacion adicional de email y password, la normalizacion del contrato de
 errores y el rate limiting de register/login se aplazan de forma consciente para
@@ -741,6 +742,7 @@ Se creo esta guia y un plan de despliegue manual. La rama
 - `6497e5f`: origenes CORS configurables;
 - `12348a3`: health checks de proceso y base de datos;
 - `315dd34`: validacion de fecha minima en el backend.
+- configuracion del fallback SPA y headers iniciales de Static Web Apps.
 
 ### Etapa 6: primer despliegue
 

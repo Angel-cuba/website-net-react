@@ -168,11 +168,11 @@ y el [plan de despliegue](docs/DEPLOYMENT_PLAN.md).
 
 El siguiente objetivo es publicar un ambiente Azure de estudio mediante un
 proceso manual. La baseline reproducible, CORS por ambiente, health checks y la
-regla de fecha del backend ya estan preparados. Quedan el fallback de la SPA,
-la configuracion de los recursos Azure, la migracion de la base remota y el
-smoke test publicado. La validacion adicional de auth y el rate limiting se
-mantienen como hardening pendiente antes de exponer el proyecto de forma
-prolongada a usuarios externos.
+regla de fecha del backend ya estan preparados. El fallback de la SPA tambien
+forma parte del build de produccion. Quedan la configuracion de los recursos
+Azure, la migracion de la base remota y el smoke test publicado. La validacion
+adicional de auth y el rate limiting se mantienen como hardening pendiente antes
+de exponer el proyecto de forma prolongada a usuarios externos.
 
 ## Seguridad y permisos
 

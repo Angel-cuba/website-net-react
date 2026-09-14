@@ -127,9 +127,10 @@ externos debe evaluar cookies `HttpOnly`, `Secure` y `SameSite`.
 ### 4.5 Fallback de la SPA
 
 Azure Static Web Apps necesita devolver `index.html` cuando el navegador abre o
-recarga `/tasks`, `/invitations`, `/shared` o `/profile`. Se debe agregar
-`full-web-app/public/staticwebapp.config.json` con `navigationFallback` y excluir
-los assets generados por Vite. Vite copiara ese archivo a la raiz de `dist`.
+recarga `/tasks`, `/invitations`, `/shared` o `/profile`.
+`full-web-app/public/staticwebapp.config.json` ya configura
+`navigationFallback`, excluye los assets generados y agrega headers iniciales.
+El build comprobado de Vite copia el archivo sin cambios a la raiz de `dist`.
 
 ## 5. Orden de implementacion y commits
 
