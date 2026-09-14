@@ -48,12 +48,11 @@ un backplane compatible.
 - Todos los recursos se crean en un unico resource group para identificarlos,
   revisar costes y eliminarlos juntos cuando termine la prueba.
 
-## 4. Bloqueos que deben resolverse antes del primer deploy
+## 4. Estado de preparacion antes del primer deploy
 
 ### 4.1 Migracion baseline
 
-El repositorio solo contiene la migracion incremental de task sharing. Hace
-falta un script baseline que cree desde cero:
+`database/baseline.sql` ya crea desde cero:
 
 - `Users`, `UserProfiles`, `Roles` y `UserRoles`;
 - `Tasks`, `TaskInvitations`, `TaskAccess` y `Notifications`;
@@ -62,15 +61,14 @@ falta un script baseline que cree desde cero:
 - el rol inicial `User`;
 - una tabla o mecanismo que registre migraciones aplicadas.
 
-La baseline debe probarse sobre una base vacia. Despues se aplica
-`20260910_001_task_sharing_constraints.sql` y se comprueba que volver a ejecutar
-el proceso no deje un esquema parcial.
+La baseline y `20260910_001_task_sharing_constraints.sql` fueron probadas sobre
+una base local vacia. Ambas registran su aplicacion y se pueden volver a ejecutar
+sin dejar un esquema parcial. Falta repetir la validacion sobre Azure SQL.
 
 ### 4.2 Configuracion por ambiente
 
-El CORS actual acepta solamente `http://localhost:5173`. Antes del deploy,
-`Program.cs` debe leer una lista obligatoria de origenes desde configuracion.
-Una estructura adecuada seria:
+`Program.cs` ya lee una lista obligatoria de origenes desde configuracion. En
+produccion se usara:
 
 ```text
 Cors__AllowedOrigins__0=https://<frontend-host>
@@ -95,12 +93,13 @@ las demas claves se guardan como app settings con separadores `__`.
 
 ### 4.3 Health checks y logs
 
-Agregar como minimo:
+Ya estan disponibles:
 
 - `/health/live`: confirma que el proceso ASP.NET Core responde;
 - `/health/ready`: comprueba que la API puede abrir una conexion a SQL Server;
-- logging estructurado sin JWT, passwords ni connection strings;
-- App Service log stream habilitado durante la primera validacion.
+
+Durante la primera publicacion todavia se debe habilitar App Service log stream
+y comprobar que los logs no incluyan JWT, passwords ni connection strings.
 
 App Service puede consultar periodicamente una ruta de health check y retirar
 instancias que no respondan. Aunque se use una sola instancia, el endpoint
@@ -108,11 +107,14 @@ tambien ayuda a distinguir fallos de aplicacion y de base de datos.
 
 ### 4.4 Validacion y exposicion publica
 
-Antes de abrir la URL se debe:
+La regla de fecha minima de cinco horas ya se valida en el backend. Para esta
+primera publicacion de estudio se acepta aplazar:
 
-- replicar en backend la regla de fecha minima de cinco horas;
 - validar longitud y formato de email, password y payloads de tareas;
 - agregar rate limiting a registro y login;
+
+Antes de abrir la URL igualmente se debe:
+
 - revisar que los errores no expongan excepciones ni SQL;
 - usar un secreto JWT largo y generado para este ambiente;
 - decidir una duracion razonable del token para pruebas;
@@ -131,7 +133,7 @@ los assets generados por Vite. Vite copiara ese archivo a la raiz de `dist`.
 
 ## 5. Orden de implementacion y commits
 
-Trabajar en `deploy/azure-study` y detenerse en estos checkpoints:
+Trabajar en `deploy/azure-ecosystem` y detenerse en estos checkpoints:
 
 1. `chore: add reproducible database baseline`
    Crea y valida el esquema completo sobre una base vacia.
@@ -141,8 +143,9 @@ Trabajar en `deploy/azure-study` y detenerse en estos checkpoints:
    Agrega liveness, readiness y su cobertura.
 4. `fix: enforce task due date on the server`
    Replica la regla de cinco horas y cubre el borde temporal.
-5. `feat: protect public authentication endpoints`
-   Agrega validacion de entrada y rate limiting.
+5. Aplazado: `feat: protect public authentication endpoints`
+   Agregara validacion de entrada y rate limiting antes de una exposicion
+   publica prolongada.
 6. `chore: configure static app routing`
    Agrega el fallback SPA y headers iniciales.
 7. `docs: add manual deployment runbook`
@@ -275,6 +278,7 @@ API mediante App Service settings:
 
 ```text
 ASPNETCORE_ENVIRONMENT=Production
+ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
 Jwt__Secret=<secret>
 Jwt__Issuer=https://<api-host>
 Jwt__Audience=https://<frontend-host>
@@ -405,7 +409,7 @@ que deba conservarse.
 - baseline reproducible validada sobre Azure SQL vacio;
 - configuracion CORS y secretos fuera del repositorio;
 - health checks activos;
-- validacion backend y rate limiting aplicados;
+- validacion de fecha aplicada y hardening de auth registrado como pendiente;
 - suite local completa en verde;
 - App Service en una sola instancia con HTTPS y WebSockets;
 - SPA con fallback de rutas y `VITE_API_URL` correcta;
@@ -418,15 +422,16 @@ que deba conservarse.
 Estos puntos no bloquean la primera prueba controlada, pero deben revisarse antes
 de presentar Wapp2 como un producto listo para usuarios externos:
 
-1. Migrar la sesion desde `localStorage` a una estrategia resistente a XSS.
-2. Agregar tests de integracion reales contra SQL Server y E2E de navegador.
-3. Publicar OpenAPI y normalizar el envelope de respuestas HTTP.
-4. Incorporar upload de avatar en lugar de aceptar solo una URL.
-5. Decidir si se necesitan emails reales y notificaciones persistentes.
-6. Agregar Azure SignalR Service o backplane al escalar la API.
-7. Definir backups, restauracion, retencion y rotacion de secretos.
-8. Corregir identificadores heredados como `EmployeeManagementApi`.
-9. Considerar CI cuando el proyecto tenga despliegues frecuentes o mas
+1. Validar email y password y agregar rate limiting a register/login.
+2. Migrar la sesion desde `localStorage` a una estrategia resistente a XSS.
+3. Agregar tests de integracion reales contra SQL Server y E2E de navegador.
+4. Publicar OpenAPI y normalizar el envelope de respuestas HTTP.
+5. Incorporar upload de avatar en lugar de aceptar solo una URL.
+6. Decidir si se necesitan emails reales y notificaciones persistentes.
+7. Agregar Azure SignalR Service o backplane al escalar la API.
+8. Definir backups, restauracion, retencion y rotacion de secretos.
+9. Corregir identificadores heredados como `EmployeeManagementApi`.
+10. Considerar CI cuando el proyecto tenga despliegues frecuentes o mas
    colaboradores. Hasta entonces, mantener la checklist local como requisito.
 
 ## 16. Referencias oficiales
