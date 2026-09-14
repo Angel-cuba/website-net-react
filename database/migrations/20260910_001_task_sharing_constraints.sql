@@ -1,8 +1,23 @@
-USE Wapp2DB;
-GO
-
+SET NOCOUNT ON;
 SET XACT_ABORT ON;
 GO
+
+DECLARE @migrationId nvarchar(150) = N'20260910_001_task_sharing_constraints';
+
+IF OBJECT_ID(N'dbo.SchemaMigrations', N'U') IS NULL
+BEGIN
+    THROW 51001, 'SchemaMigrations is missing. Apply database/baseline.sql first.', 1;
+END;
+
+IF EXISTS (
+    SELECT 1
+    FROM dbo.SchemaMigrations
+    WHERE MigrationId = @migrationId
+)
+BEGIN
+    PRINT N'Migration 20260910_001_task_sharing_constraints is already applied.';
+    RETURN;
+END;
 
 BEGIN TRY
     BEGIN TRANSACTION;
@@ -81,7 +96,11 @@ BEGIN TRY
             );
     END;
 
+    INSERT INTO dbo.SchemaMigrations (MigrationId)
+    VALUES (@migrationId);
+
     COMMIT TRANSACTION;
+    PRINT N'Migration 20260910_001_task_sharing_constraints applied successfully.';
 END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
