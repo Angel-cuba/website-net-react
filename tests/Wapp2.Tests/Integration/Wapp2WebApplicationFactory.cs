@@ -16,12 +16,14 @@ internal sealed class Wapp2WebApplicationFactory(
     public const string JwtSecret = "http-test-secret-with-at-least-32-characters";
     public const string JwtIssuer = "Wapp2.HttpTests";
     public const string JwtAudience = "Wapp2.HttpTests.Client";
+    public const string CorsAllowedOrigin = "https://frontend.example.test";
 
     static Wapp2WebApplicationFactory()
     {
         Environment.SetEnvironmentVariable("Jwt__Secret", JwtSecret);
         Environment.SetEnvironmentVariable("Jwt__Issuer", JwtIssuer);
         Environment.SetEnvironmentVariable("Jwt__Audience", JwtAudience);
+        Environment.SetEnvironmentVariable("Cors__AllowedOrigins__0", CorsAllowedOrigin);
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -33,7 +35,8 @@ internal sealed class Wapp2WebApplicationFactory(
             {
                 ["Jwt:Secret"] = JwtSecret,
                 ["Jwt:Issuer"] = JwtIssuer,
-                ["Jwt:Audience"] = JwtAudience
+                ["Jwt:Audience"] = JwtAudience,
+                ["Cors:AllowedOrigins:0"] = CorsAllowedOrigin
             });
         });
         builder.ConfigureServices(services =>
