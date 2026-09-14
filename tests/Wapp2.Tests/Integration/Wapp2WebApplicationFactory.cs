@@ -4,13 +4,15 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Wapp2.Tests.TestDoubles;
+using Wapp2.Shared.Health;
 using Wapp2.Users.Interfaces;
 
 namespace Wapp2.Tests.Integration;
 
 internal sealed class Wapp2WebApplicationFactory(
     UserRepositoryStub userRepository,
-    UserProfileServiceStub userProfileService
+    UserProfileServiceStub userProfileService,
+    IDatabaseHealthProbe? databaseHealthProbe = null
 ) : WebApplicationFactory<Program>
 {
     public const string JwtSecret = "http-test-secret-with-at-least-32-characters";
@@ -43,8 +45,12 @@ internal sealed class Wapp2WebApplicationFactory(
         {
             services.RemoveAll<IUserRepository>();
             services.RemoveAll<IUserProfileService>();
+            services.RemoveAll<IDatabaseHealthProbe>();
             services.AddSingleton<IUserRepository>(userRepository);
             services.AddSingleton<IUserProfileService>(userProfileService);
+            services.AddSingleton(
+                databaseHealthProbe ?? new DatabaseHealthProbeStub()
+            );
         });
     }
 }

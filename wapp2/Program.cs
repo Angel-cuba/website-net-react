@@ -2,11 +2,14 @@ using System.Text;
 using System.Text.Json;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Tasks.Repositories;
 using Tasks.Services;
 using Tasks.Interfaces;
 using Wapp2.Shared.Database;
+using Wapp2.Shared.Health;
 using Wapp2.Auth.Interfaces;
 using Wapp2.Auth.Services;
 using Wapp2.Users.Interfaces;
@@ -28,6 +31,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSignalR();
+builder.Services.AddScoped<IDatabaseHealthProbe, SqlDatabaseHealthProbe>();
+builder.Services
+    .AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>(
+        "database",
+        failureStatus: HealthStatus.Unhealthy,
+        tags: ["ready"]
+    );
 
 
 // Add repository and service registrations
@@ -177,6 +188,14 @@ app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = _ => false
+});
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = healthCheck => healthCheck.Tags.Contains("ready")
+});
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
 
