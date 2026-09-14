@@ -2,11 +2,14 @@ using System.Text;
 using System.Text.Json;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Tasks.Repositories;
 using Tasks.Services;
 using Tasks.Interfaces;
 using Wapp2.Shared.Database;
+using Wapp2.Shared.Health;
 using Wapp2.Auth.Interfaces;
 using Wapp2.Auth.Services;
 using Wapp2.Users.Interfaces;
@@ -28,6 +31,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSignalR();
+builder.Services.AddScoped<IDatabaseHealthProbe, SqlDatabaseHealthProbe>();
+builder.Services
+    .AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>(
+        "database",
+        failureStatus: HealthStatus.Unhealthy,
+        tags: ["ready"]
+    );
 
 
 // Add repository and service registrations
@@ -54,6 +65,19 @@ var jwtIssuer = builder.Configuration["Jwt:Issuer"]
     ?? throw new InvalidOperationException("Jwt:Issuer is not configured.");
 var jwtAudience = builder.Configuration["Jwt:Audience"]
     ?? throw new InvalidOperationException("Jwt:Audience is not configured.");
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .GetChildren()
+    .Select(origin => origin.Value?.Trim())
+    .OfType<string>()
+    .Where(origin => origin.Length > 0)
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToArray();
+
+if (allowedOrigins.Length == 0)
+{
+    throw new InvalidOperationException("Cors:AllowedOrigins is not configured.");
+}
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -142,10 +166,10 @@ builder.Services.AddScoped<ISqlConnectionFactory, SqlConnectionFactory>();
 // Enable CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("FrontendLocal", policy =>
+    options.AddPolicy("Frontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173")
+            .WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -157,13 +181,21 @@ var app = builder.Build();
 
 
 // Enable CORS for the frontend application
-app.UseCors("FrontendLocal");
+app.UseCors("Frontend");
 app.UseMiddleware<ErrorHandlingMiddleware>();
 
 // Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = _ => false
+});
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = healthCheck => healthCheck.Tags.Contains("ready")
+});
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
 
