@@ -51,8 +51,8 @@ sola base de datos.
 La referencia completa del sistema esta en:
 
 - [Project Guide](docs/PROJECT_GUIDE.md): arquitectura, flujos, permisos, API,
-  modelo de datos, realtime, stack, configuracion, diagnostico y pendientes de
-  produccion.
+  modelo de datos, realtime, stack, configuracion, diagnostico, historial de
+  implementacion y pendientes de produccion.
 - [Deployment Plan](docs/DEPLOYMENT_PLAN.md): bloqueos previos, arquitectura
   Azure, despliegue manual, smoke test multiusuario, rollback y cierre del
   ambiente.
@@ -106,9 +106,10 @@ dotnet user-secrets set "Jwt:Audience" "<JWT_AUDIENCE>" --project wapp2/wapp2.cs
 
 No guardar secretos reales en `appsettings.json`, `.env`, README ni commits.
 
-Aplicar en orden los scripts de `database/migrations` sobre `Wapp2DB`. El
-repositorio todavia no contiene una migracion baseline que cree todo el esquema
-desde cero.
+Para una base vacia, aplicar primero `database/baseline.sql` y despues los
+scripts de `database/migrations` en orden. Ambos tipos de script registran su
+ejecucion en `SchemaMigrations` y pueden volver a ejecutarse sin duplicar el
+esquema.
 
 ### Frontend
 
@@ -157,18 +158,21 @@ npm run build
 
 Las suites cubren autenticacion, generacion y validacion JWT, identidad basada en
 claims, cuenta y perfil de usuario, tareas, invitaciones, permisos, realtime,
-routing y los principales flujos de componentes y hooks. Todavia faltan pruebas
-de integracion reales contra SQL Server y end-to-end de navegador. Consulta los
+routing, health checks, validacion de fechas y los principales flujos de
+componentes y hooks. Todavia faltan pruebas de integracion reales contra SQL
+Server y end-to-end de navegador. Consulta los
 [proximos pasos](docs/PROJECT_GUIDE.md#18-proximos-pasos-y-estado-de-produccion)
 y el [plan de despliegue](docs/DEPLOYMENT_PLAN.md).
 
 ## Proximo hito
 
 El siguiente objetivo es publicar un ambiente Azure de estudio mediante un
-proceso manual. CI queda aplazado hasta que el proyecto tenga despliegues
-frecuentes o mas colaboradores. Antes del primer deploy se deben cerrar la
-migracion baseline, configuracion CORS por ambiente, health checks, validacion
-backend y proteccion de los endpoints publicos.
+proceso manual. La baseline reproducible, CORS por ambiente, health checks y la
+regla de fecha del backend ya estan preparados. El fallback de la SPA tambien
+forma parte del build de produccion. Quedan la configuracion de los recursos
+Azure, la migracion de la base remota y el smoke test publicado. La validacion
+adicional de auth y el rate limiting se mantienen como hardening pendiente antes
+de exponer el proyecto de forma prolongada a usuarios externos.
 
 ## Seguridad y permisos
 

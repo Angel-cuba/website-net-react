@@ -9,12 +9,73 @@ namespace Wapp2.Tests.Tasks;
 
 public class TaskServiceTests
 {
+    private static readonly DateTimeOffset CurrentTime = new(
+        2026,
+        9,
+        14,
+        12,
+        0,
+        0,
+        TimeSpan.Zero
+    );
+
+    [Fact]
+    public async Task CreateTask_WhenDueDateIsLessThanFiveHoursAway_ThrowsBadRequest()
+    {
+        var task = CreateTask();
+        task.DueDate = CurrentTime.AddHours(5).AddTicks(-1).UtcDateTime;
+        var repository = new TaskRepositoryStub();
+        var notifier = new RecordingRealtimeNotifier();
+        var service = CreateService(repository, notifier);
+
+        var exception = await Assert.ThrowsAsync<ErrorHandlingMiddlewareException>(
+            () => service.CreateTask(task, ownerUserId: 42)
+        );
+
+        Assert.Equal(HttpStatusCode.BadRequest, exception.StatusCode);
+        Assert.Equal(0, repository.CreateTaskCallCount);
+        Assert.Empty(notifier.AllNotifications);
+    }
+
+    [Fact]
+    public async Task CreateTask_WhenDueDateIsExactlyFiveHoursAway_Persists()
+    {
+        var task = CreateTask();
+        task.DueDate = CurrentTime.AddHours(5).UtcDateTime;
+        var repository = new TaskRepositoryStub();
+        var notifier = new RecordingRealtimeNotifier();
+        var service = CreateService(repository, notifier);
+
+        var result = await service.CreateTask(task, ownerUserId: 42);
+
+        Assert.Same(task, result);
+        Assert.Equal(1, repository.CreateTaskCallCount);
+        Assert.Same(task, repository.LastCreatedTask);
+        Assert.Equal(42, repository.LastCreateOwnerUserId);
+    }
+
+    [Fact]
+    public async Task CreateTask_WhenDueDateIsMissing_Persists()
+    {
+        var task = CreateTask();
+        task.DueDate = null;
+        var repository = new TaskRepositoryStub();
+        var notifier = new RecordingRealtimeNotifier();
+        var service = CreateService(repository, notifier);
+
+        var result = await service.CreateTask(task, ownerUserId: 42);
+
+        Assert.Same(task, result);
+        Assert.Equal(1, repository.CreateTaskCallCount);
+        Assert.Null(repository.LastCreatedTask!.DueDate);
+    }
+
     [Fact]
     public async Task UpdateTask_WhenTaskIsNotVisible_ThrowsNotFound()
     {
         var repository = new TaskRepositoryStub();
         var notifier = new RecordingRealtimeNotifier();
-        var service = new TaskService(repository, notifier);
+        var service = CreateService(repository, notifier);
 
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
             () => service.UpdateTask(CreateTask(), userId: 42)
@@ -37,7 +98,7 @@ public class TaskServiceTests
             }
         };
         var notifier = new RecordingRealtimeNotifier();
-        var service = new TaskService(repository, notifier);
+        var service = CreateService(repository, notifier);
 
         var exception = await Assert.ThrowsAsync<ErrorHandlingMiddlewareException>(
             () => service.UpdateTask(CreateTask(), userId: 42)
@@ -61,7 +122,7 @@ public class TaskServiceTests
             RejectUpdate = true
         };
         var notifier = new RecordingRealtimeNotifier();
-        var service = new TaskService(repository, notifier);
+        var service = CreateService(repository, notifier);
 
         var exception = await Assert.ThrowsAsync<ErrorHandlingMiddlewareException>(
             () => service.UpdateTask(CreateTask(), userId: 42)
@@ -87,7 +148,7 @@ public class TaskServiceTests
             InvitationUserIds = [13]
         };
         var notifier = new RecordingRealtimeNotifier();
-        var service = new TaskService(repository, notifier);
+        var service = CreateService(repository, notifier);
 
         var result = await service.UpdateTask(task, userId: 42);
 
@@ -100,11 +161,36 @@ public class TaskServiceTests
     }
 
     [Fact]
+    public async Task UpdateTask_WhenDueDateIsLessThanFiveHoursAway_ThrowsBadRequest()
+    {
+        var task = CreateTask();
+        task.DueDate = CurrentTime.AddHours(4).UtcDateTime;
+        var repository = new TaskRepositoryStub
+        {
+            UpdateAccess = new TaskUpdateAccessDetailsModel
+            {
+                OwnerUserId = 7,
+                CanEdit = true
+            }
+        };
+        var notifier = new RecordingRealtimeNotifier();
+        var service = CreateService(repository, notifier);
+
+        var exception = await Assert.ThrowsAsync<ErrorHandlingMiddlewareException>(
+            () => service.UpdateTask(task, userId: 42)
+        );
+
+        Assert.Equal(HttpStatusCode.BadRequest, exception.StatusCode);
+        Assert.Equal(0, repository.UpdateTaskCallCount);
+        Assert.Empty(notifier.AllNotifications);
+    }
+
+    [Fact]
     public async Task UpdateTaskAccessPermission_WhenAccessDoesNotExist_ReturnsFalse()
     {
         var repository = new TaskRepositoryStub();
         var notifier = new RecordingRealtimeNotifier();
-        var service = new TaskService(repository, notifier);
+        var service = CreateService(repository, notifier);
 
         var updated = await service.UpdateTaskAccessPermission(
             taskId: 10,
@@ -122,7 +208,7 @@ public class TaskServiceTests
     {
         var repository = new TaskRepositoryStub { PermissionUserId = 42 };
         var notifier = new RecordingRealtimeNotifier();
-        var service = new TaskService(repository, notifier);
+        var service = CreateService(repository, notifier);
 
         var updated = await service.UpdateTaskAccessPermission(
             taskId: 10,
@@ -142,7 +228,7 @@ public class TaskServiceTests
     {
         var repository = new TaskRepositoryStub();
         var notifier = new RecordingRealtimeNotifier();
-        var service = new TaskService(repository, notifier);
+        var service = CreateService(repository, notifier);
 
         var revoked = await service.RevokeTaskAccess(
             taskId: 10,
@@ -159,7 +245,7 @@ public class TaskServiceTests
     {
         var repository = new TaskRepositoryStub { RevokedUserId = 42 };
         var notifier = new RecordingRealtimeNotifier();
-        var service = new TaskService(repository, notifier);
+        var service = CreateService(repository, notifier);
 
         var revoked = await service.RevokeTaskAccess(
             taskId: 10,
@@ -183,8 +269,20 @@ public class TaskServiceTests
             Category = "Testing",
             Priority = "High",
             Status = "in-progress",
-            DueDate = DateTime.UtcNow.AddHours(8)
+            DueDate = CurrentTime.AddHours(8).UtcDateTime
         };
+    }
+
+    private static TaskService CreateService(
+        TaskRepositoryStub repository,
+        RecordingRealtimeNotifier notifier
+    )
+    {
+        return new TaskService(
+            repository,
+            notifier,
+            new FixedTimeProvider(CurrentTime)
+        );
     }
 
 }

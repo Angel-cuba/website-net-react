@@ -11,6 +11,10 @@ Este documento describe el sistema que existe actualmente en el repositorio. No
 es una lista de ideas futuras. Las limitaciones y el trabajo pendiente para
 produccion se documentan de forma separada al final.
 
+La seccion de historial agrupa las etapas que llevaron desde el prototipo
+inicial hasta la preparacion del primer despliegue. Los comandos reproducibles
+permanecen junto a la configuracion, validacion y operacion que explican.
+
 La preparacion y ejecucion de una primera publicacion se detallan en el
 [Deployment Plan](DEPLOYMENT_PLAN.md).
 
@@ -47,6 +51,7 @@ El repositorio sigue un monolito modular:
 - `full-web-app` contiene la SPA React.
 - `wapp2` contiene la API principal ASP.NET Core.
 - `Wapp2DB` es la fuente de verdad.
+- `database/baseline.sql` crea el esquema completo sobre una base vacia.
 - `database/migrations` contiene cambios SQL incrementales versionados.
 - `VideoGameCharacterApi` es una API anterior de referencia y no participa en
   el flujo de Wapp2.
@@ -87,6 +92,7 @@ una misma linea LTS reproducible.
 | Vitest | `5.0.0` | Runner de tests y mocks |
 | `@vitest/coverage-v8` | `5.0.0` | Cobertura frontend |
 | jsdom | `30.0.1` | DOM de navegador en Node |
+| `@testing-library/dom` | `10.4.1` | Consultas y utilidades sobre el DOM |
 | React Testing Library | `16.3.3` | Pruebas de componentes por comportamiento |
 | `@testing-library/user-event` | `14.6.7` | Interacciones de usuario |
 | `@testing-library/jest-dom` | `7.0.1` | Asserts semanticos del DOM |
@@ -110,6 +116,7 @@ documento OpenAPI ni una interfaz Swagger en `Program.cs`.
 | Tecnologia o paquete | Version | Funcion |
 | --- | --- | --- |
 | xUnit | `2.9.3` | Tests unitarios del dominio y servicios |
+| xunit.runner.visualstudio | `3.1.4` | Adaptador de xUnit para `dotnet test` e IDEs |
 | Microsoft.AspNetCore.Mvc.Testing | `10.0.11` | Tests HTTP con host ASP.NET Core en memoria |
 | Microsoft.NET.Test.Sdk | `17.14.1` | Descubrimiento y ejecucion de tests .NET |
 | coverlet.collector | `6.0.4` | Recoleccion de cobertura |
@@ -123,6 +130,7 @@ documento OpenAPI ni una interfaz Swagger en `Program.cs`.
 |   |-- PROJECT_GUIDE.md
 |   `-- DEPLOYMENT_PLAN.md
 |-- database/
+|   |-- baseline.sql
 |   `-- migrations/
 |-- full-web-app/
 |   |-- src/
@@ -250,8 +258,9 @@ envia como `Authorization: Bearer <token>` en las llamadas protegidas.
    tarea como completada. No puede compartirla, administrar accesos ni borrarla.
 
 El selector de fecha del frontend exige al menos cinco horas desde el momento
-actual. Esta validacion todavia es solo del cliente y debe replicarse en el
-backend antes de produccion.
+actual. El backend aplica la misma regla antes de crear o actualizar, normaliza
+la fecha a UTC y permite omitirla. Un valor inferior al limite devuelve `400`
+sin escribir en SQL ni emitir eventos realtime.
 
 ## 9. Flujo de invitaciones y acceso
 
@@ -434,8 +443,8 @@ La migracion versionada
 - constraint de integridad del destinatario;
 - transaccion con `XACT_ABORT ON` y rollback ante error.
 
-El repositorio aun no contiene una migracion baseline que cree toda la base desde
-cero. La migracion de sharing presupone que las tablas base ya existen.
+`database/baseline.sql` crea primero las tablas base. La migracion de sharing se
+aplica despues y agrega estas restricciones e indices al esquema existente.
 
 ## 15. Configuracion local
 
@@ -475,12 +484,23 @@ Antes de ejecutar SQL, comprobar siempre la instancia y base activas:
 SELECT @@SERVERNAME AS ServerName, DB_NAME() AS CurrentDatabase;
 ```
 
-Aplicar los scripts de `database/migrations` en orden sobre `Wapp2DB`. Por
-ejemplo, con `sqlcmd` y autenticacion interactiva:
+En una base vacia, aplicar primero la baseline y despues las migraciones por
+orden. Por ejemplo, con `sqlcmd` y autenticacion interactiva:
 
 ```bash
-sqlcmd -S localhost,1433 -d Wapp2DB -U sa -C -i database/migrations/20260910_001_task_sharing_constraints.sql
+sqlcmd -S localhost,1433 -d Wapp2DB -U sa -C -b -i database/baseline.sql
+sqlcmd -S localhost,1433 -d Wapp2DB -U sa -C -b -i database/migrations/20260910_001_task_sharing_constraints.sql
 ```
+
+`baseline.sql` crea el esquema completo, los roles iniciales y
+`SchemaMigrations`. Los scripts detectan ejecuciones previas y no deben editarse
+despues de haberse aplicado; los cambios posteriores pertenecen a una migracion
+nueva.
+
+En el contenedor SQL Server local usado durante la preparacion, Go `sqlcmd`
+rechazo el certificado de desarrollo con `x509: negative serial number`. Solo
+para ese entorno local se sustituyo `-C` por `-N disable`. Azure SQL debe
+mantener cifrado y validacion TLS; no se debe trasladar ese ajuste al despliegue.
 
 ### Frontend
 
@@ -511,7 +531,9 @@ Servicios locales:
 - API: `http://localhost:5104`;
 - SignalR: `http://localhost:5104/hubs/notifications`.
 
-El CORS actual permite exclusivamente `http://localhost:5173`.
+En Development, CORS permite `http://localhost:5173`. En otros ambientes la API
+exige al menos un valor `Cors:AllowedOrigins` y solo acepta los origenes HTTPS
+configurados para ese despliegue.
 
 ## 16. Validacion
 
@@ -550,13 +572,14 @@ contra la API y SQL Server reales.
 La configuracion mantiene umbrales globales minimos de 70% para lineas y
 statements, 65% para funciones y 55% para branches.
 
-La suite `Wapp2.Tests` cubre inicialmente registro y login, hashing de password,
+La suite `Wapp2.Tests` cubre registro y login, hashing de password,
 generacion y validacion JWT, identidad basada en claims, cuenta y perfil de
 usuario, ciclo de invitaciones, autorizacion de edicion, permisos, revocacion de
-acceso y emision de eventos del servicio de tareas. Las pruebas HTTP verifican
-el contrato `401`, firma y expiracion del JWT, cuentas eliminadas, propagacion de
-identidad y autenticacion de la negociacion SignalR. Todavia no hay cobertura de
-integracion con SQL Server o end-to-end. En particular, la traduccion de
+acceso, emision de eventos del servicio de tareas y el limite temporal de las
+fechas. Las pruebas HTTP verifican liveness, readiness, CORS, el contrato `401`,
+firma y expiracion del JWT, cuentas eliminadas, propagacion de identidad y
+autenticacion de la negociacion SignalR. Todavia no hay cobertura de integracion
+automatizada con SQL Server o end-to-end. En particular, la traduccion de
 conflictos de clave unica `2601/2627` requiere una prueba con SQL Server. Los
 builds y lint no sustituyen esas pruebas.
 
@@ -582,8 +605,15 @@ falla rapido si falta cualquiera de esas claves.
 
 ### CORS en navegador
 
-El origen debe ser exactamente `http://localhost:5173`. Otro puerto, hostname o
-protocolo necesita una configuracion CORS explicita.
+En Development, el origen permitido es `http://localhost:5173`. En otro ambiente
+se debe comparar la URL del navegador con `Cors:AllowedOrigins`, incluidos
+protocolo, hostname y puerto cuando corresponda.
+
+### TLS de `sqlcmd` contra el contenedor local
+
+Si Go `sqlcmd` devuelve `x509: negative serial number`, el certificado servido
+por el contenedor no puede analizarse. Para diagnostico local se puede usar
+`-N disable`; no se debe desactivar el cifrado al conectar con Azure SQL.
 
 ### La interfaz parece usar otra rama o una version antigua
 
@@ -616,36 +646,47 @@ hito es un ambiente Azure de estudio desplegado manualmente. CI no es necesario
 en esta etapa y queda como mejora opcional para cuando aumente la frecuencia de
 deploys o el numero de colaboradores.
 
-### Bloqueos para la primera publicacion
+### Preparacion completada
 
-1. Crear una migracion baseline reproducible para toda la base de datos y
-   probarla sobre Azure SQL vacio.
-2. Hacer CORS configurable por ambiente y aceptar solo la URL HTTPS de la SPA.
-3. Agregar health checks de proceso y SQL Server, junto con logging estructurado.
-4. Replicar en backend la fecha minima de cinco horas y completar la validacion
-   de email, password y payloads de tareas.
-5. Agregar rate limiting, especialmente a register y login.
-6. Agregar el fallback de rutas requerido por el hosting estatico de la SPA.
-7. Configurar secretos fuera del repositorio y verificar que los errores no
-   filtren informacion sensible.
+1. La baseline crea el esquema completo y fue validada sobre una base local
+   vacia junto con la migracion incremental de task sharing.
+2. CORS se configura por ambiente y conserva el origen local solo en
+   Development.
+3. `/health/live` comprueba el proceso sin SQL y `/health/ready` valida la
+   conexion mediante una consulta ligera.
+4. El backend replica la fecha minima de cinco horas al crear y actualizar.
+5. El build de Vite incluye el fallback de rutas y headers iniciales para Azure
+   Static Web Apps.
+
+### Pendiente para la primera publicacion controlada
+
+1. Crear Azure SQL y aplicar baseline y migraciones sobre la base vacia.
+2. Configurar secretos, URLs HTTPS, WebSockets y health check en App Service.
+3. Publicar ambos artefactos y completar el smoke test multiusuario.
+
+La validacion adicional de email y password, la normalizacion del contrato de
+errores y el rate limiting de register/login se aplazan de forma consciente para
+esta primera practica. No bloquean el despliegue tecnico, pero deben completarse
+antes de mantener una URL publica abierta a trafico no controlado.
 
 El orden, comandos, smoke test y rollback estan en el
 [Deployment Plan](DEPLOYMENT_PLAN.md).
 
 ### Despues de la primera prueba publicada
 
-1. Agregar integracion real con SQL Server y E2E de navegador para los flujos
+1. Validar estrictamente auth y agregar rate limiting a register/login.
+2. Agregar integracion real con SQL Server y E2E de navegador para los flujos
    multiusuario.
-2. Decidir una estrategia de sesion mas resistente a XSS; el JWT vive ahora en
+3. Decidir una estrategia de sesion mas resistente a XSS; el JWT vive ahora en
    `localStorage`.
-3. Activar OpenAPI/Swagger o publicar un contrato versionado.
-4. Configurar un backplane SignalR solo si se ejecutan varias instancias.
-5. Definir emails reales y notificaciones persistentes si el producto los
+4. Activar OpenAPI/Swagger o publicar un contrato versionado.
+5. Configurar un backplane SignalR solo si se ejecutan varias instancias.
+6. Definir emails reales y notificaciones persistentes si el producto los
    necesita.
-6. Implementar upload de avatar; actualmente solo se guarda una URL externa.
-7. Revisar identificadores heredados como `RootNamespace=EmployeeManagementApi`.
-8. Ensayar backup, restore, rotacion de secretos y migraciones compensatorias.
-9. Considerar CI para automatizar la puerta local cuando aporte valor al flujo
+7. Implementar upload de avatar; actualmente solo se guarda una URL externa.
+8. Revisar identificadores heredados como `RootNamespace=EmployeeManagementApi`.
+9. Ensayar backup, restore, rotacion de secretos y migraciones compensatorias.
+10. Considerar CI para automatizar la puerta local cuando aporte valor al flujo
    de trabajo.
 
 ## 19. Decisiones que deben mantenerse
@@ -658,3 +699,54 @@ El orden, comandos, smoke test y rollback estan en el
 - Los eventos realtime invalidan datos; las lecturas HTTP recuperan el estado.
 - `VideoGameCharacterApi` permanece fuera del flujo principal hasta que exista
   una decision explicita de migracion.
+
+## 20. Historial de implementacion
+
+Este historial explica la secuencia de aprendizaje y las decisiones que dieron
+forma al sistema. No sustituye el historial Git ni el runbook de despliegue.
+
+### Etapa 1: prototipo y separacion de responsabilidades
+
+El repositorio comenzo con un frontend y APIs de ejemplo, incluida
+`VideoGameCharacterApi`. La API principal evoluciono hacia `wapp2`, se separo la
+creacion de conexiones de las consultas Dapper y se organizo el backend por
+dominios. SQL Server quedo como fuente de verdad.
+
+### Etapa 2: identidad, perfiles y tareas privadas
+
+Se incorporaron registro, BCrypt, JWT, roles y validacion de la cuenta asociada
+al token. Las tareas pasaron a estar filtradas por el usuario autenticado y el
+perfil obtuvo lectura, edicion y eliminacion de cuenta transaccional. El
+frontend se reorganizo por features y dejo de mostrar detalles internos del JWT.
+
+### Etapa 3: colaboracion entre usuarios
+
+Se modelaron invitaciones y accesos mediante `TaskInvitations` y `TaskAccess`.
+El flujo crecio desde `View only` hasta permisos `CanEdit`, revocacion,
+reinvitacion e historial deduplicado. SignalR se usa como aviso de invalidacion;
+las consultas HTTP vuelven a leer el estado autoritativo.
+
+### Etapa 4: experiencia y regresion
+
+Se consolidaron las vistas Tasks, Invitations, Shared tasks y Profile, incluidos
+badges, estados de acceso y acciones del owner. Las pruebas backend y frontend
+se ampliaron alrededor de autenticacion, autorizacion por recurso, realtime,
+routing, componentes, hooks y flujos de perfil.
+
+### Etapa 5: documentacion y preparacion de Azure
+
+Se creo esta guia y un plan de despliegue manual. La rama
+`deploy/azure-ecosystem` agrego estos checkpoints:
+
+- `ef208bb`: baseline reproducible de SQL Server;
+- `6497e5f`: origenes CORS configurables;
+- `12348a3`: health checks de proceso y base de datos;
+- `315dd34`: validacion de fecha minima en el backend.
+- configuracion del fallback SPA y headers iniciales de Static Web Apps.
+
+### Etapa 6: primer despliegue
+
+En curso. Al terminar se registraran aqui la arquitectura realmente publicada,
+el orden comprobado, los comandos reutilizables, los resultados del smoke test,
+los problemas encontrados y el procedimiento de cierre. Los nombres sensibles,
+tokens y credenciales no formaran parte del documento.

@@ -13,10 +13,13 @@ internal sealed class TaskRepositoryStub : ITaskRepository
     public int? RevokedUserId { get; init; }
     public bool RejectUpdate { get; init; }
     public int GetTaskCallCount { get; private set; }
+    public int CreateTaskCallCount { get; private set; }
     public int UpdateTaskCallCount { get; private set; }
     public int? LastGetTaskId { get; private set; }
     public int? LastGetTaskOwnerUserId { get; private set; }
     public TaskModel? LastUpdatedTask { get; private set; }
+    public TaskModel? LastCreatedTask { get; private set; }
+    public int? LastCreateOwnerUserId { get; private set; }
 
     public Task<TaskModel?> GetTask(int id, int ownerUserId)
     {
@@ -76,8 +79,13 @@ internal sealed class TaskRepositoryStub : ITaskRepository
     public Task<TaskSharingDetailsModel?> GetTaskSharing(int taskId, int ownerUserId) =>
         throw new NotSupportedException();
 
-    public Task<TaskModel> CreateTask(TaskModel task, int ownerUserId) =>
-        throw new NotSupportedException();
+    public Task<TaskModel> CreateTask(TaskModel task, int ownerUserId)
+    {
+        CreateTaskCallCount++;
+        LastCreatedTask = task;
+        LastCreateOwnerUserId = ownerUserId;
+        return Task.FromResult(task);
+    }
 
     public Task DeleteTask(int id, int ownerUserId) => throw new NotSupportedException();
 }
