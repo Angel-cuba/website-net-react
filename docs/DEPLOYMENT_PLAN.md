@@ -107,10 +107,11 @@ el auto-pause de una base serverless marque el proceso web como caido.
 
 ### 4.4 Validacion y exposicion publica
 
-La regla de fecha minima de cinco horas ya se valida en el backend. Para esta
-primera publicacion de estudio se acepta aplazar:
+La regla de fecha minima de cinco horas y las reglas basicas de email y password
+ya se validan en frontend y backend. Para esta publicacion de estudio se acepta
+aplazar:
 
-- validar longitud y formato de email, password y payloads de tareas;
+- ampliar la validacion de payloads y las politicas de credenciales;
 - agregar rate limiting a registro y login;
 
 Antes de abrir la URL igualmente se debe:
@@ -145,9 +146,9 @@ Trabajar en `deploy/azure-ecosystem` y detenerse en estos checkpoints:
    Agrega liveness, readiness y su cobertura.
 4. `fix: enforce task due date on the server`
    Replica la regla de cinco horas y cubre el borde temporal.
-5. Aplazado: `feat: protect public authentication endpoints`
-   Agregara validacion de entrada y rate limiting antes de una exposicion
-   publica prolongada.
+5. Parcial: `feat: protect public authentication endpoints`
+   La validacion basica de email y password esta aplicada. El rate limiting y
+   politicas mas exigentes quedan antes de una exposicion publica prolongada.
 6. `chore: configure static app routing`
    Agrega el fallback SPA y headers iniciales.
 7. `docs: add manual deployment runbook`
@@ -446,7 +447,8 @@ que deba conservarse.
 - baseline reproducible validada sobre Azure SQL vacio;
 - configuracion CORS y secretos fuera del repositorio;
 - health checks activos;
-- validacion de fecha aplicada y hardening de auth registrado como pendiente;
+- validacion de fecha y credenciales basicas aplicada, con rate limiting
+  registrado como pendiente;
 - suite local completa en verde;
 - App Service en una sola instancia con HTTPS y WebSockets;
 - SPA con fallback de rutas y `VITE_API_URL` correcta;
@@ -459,7 +461,8 @@ que deba conservarse.
 Estos puntos no bloquean la primera prueba controlada, pero deben revisarse antes
 de presentar Wapp2 como un producto listo para usuarios externos:
 
-1. Validar email y password y agregar rate limiting a register/login.
+1. Ampliar las politicas de email y password y agregar rate limiting a
+   register/login.
 2. Migrar la sesion desde `sessionStorage` a una estrategia resistente a XSS.
 3. Agregar tests de integracion reales contra SQL Server y E2E de navegador.
 4. Publicar OpenAPI y normalizar el envelope de respuestas HTTP.

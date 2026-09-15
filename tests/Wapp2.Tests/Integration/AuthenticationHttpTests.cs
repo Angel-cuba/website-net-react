@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -16,6 +17,34 @@ namespace Wapp2.Tests.Integration;
 
 public class AuthenticationHttpTests
 {
+    [Theory]
+    [InlineData("/api/auth/register", "person@example", "secret", "Enter a valid email address.")]
+    [InlineData("/api/auth/register", "person@example.com", "short", "Password must be between 6 and 20 characters.")]
+    [InlineData("/api/auth/register", "person@example.com", "123456789012345678901", "Password must be between 6 and 20 characters.")]
+    [InlineData("/api/auth/login", "person@example", "secret", "Enter a valid email address.")]
+    [InlineData("/api/auth/login", "person@example.com", "short", "Password must be between 6 and 20 characters.")]
+    [InlineData("/api/auth/login", "person@example.com", "123456789012345678901", "Password must be between 6 and 20 characters.")]
+    public async Task AuthEndpoint_WithInvalidCredentials_ReturnsBadRequestWithoutRepositoryLookup(
+        string path,
+        string email,
+        string password,
+        string expectedMessage
+    )
+    {
+        var users = new UserRepositoryStub();
+        using var factory = CreateFactory(users);
+        using var client = CreateClient(factory);
+
+        var response = await client.PostAsJsonAsync(path, new { email, password });
+        var body = await ParseBody(response);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.False(body.RootElement.GetProperty("success").GetBoolean());
+        Assert.Equal(expectedMessage, body.RootElement.GetProperty("message").GetString());
+        Assert.Equal(JsonValueKind.Null, body.RootElement.GetProperty("data").ValueKind);
+        Assert.Null(users.LastEmailLookup);
+    }
+
     [Fact]
     public async Task ProtectedEndpoint_WithoutToken_ReturnsJsonUnauthorized()
     {

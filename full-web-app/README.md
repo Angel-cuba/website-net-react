@@ -54,13 +54,13 @@ npm run preview
 | `npm run preview` | sirve localmente el build generado |
 
 La suite verifica el cliente HTTP, autenticacion de requests, almacenamiento del
-token, fechas, errores, normalizacion de tareas y los providers de autenticacion,
-SignalR e invitaciones. Tambien cubre el formulario y listado de tareas y las
-tarjetas de invitacion, junto con el hook CRUD de tareas propias. Los hooks de
-shared tasks y administracion de acceso tambien estan cubiertos. Los paneles,
-componentes restantes y E2E se incorporan por fases; el estado, edicion y borrado
-de perfil, junto con el router y shell autenticado, ya forman parte de la
-regresion.
+token, validacion de credenciales, fechas, errores, normalizacion de tareas y los
+providers de autenticacion, SignalR e invitaciones. Tambien cubre el formulario
+y listado de tareas y las tarjetas de invitacion, junto con el hook CRUD de
+tareas propias. Los hooks de shared tasks y administracion de acceso tambien
+estan cubiertos. Los paneles, componentes restantes y E2E se incorporan por
+fases; el estado, edicion y borrado de perfil, junto con el router y shell
+autenticado, ya forman parte de la regresion.
 
 La cobertura exige como minimo 70% de lineas y statements, 65% de funciones y
 55% de branches.
@@ -103,6 +103,9 @@ React Router.
 
 ## Sesion y HTTP
 
+- Login y registro exigen un email con usuario, `@` y dominio con extension.
+- El password admite entre 6 y 20 caracteres, incluidos ambos limites.
+- El email se envia sin espacios exteriores; el password no se modifica.
 - El JWT se guarda en `sessionStorage` bajo `wapp2.auth.token`; cada pestana
   mantiene una sesion independiente para evitar mezclar cuentas.
 - `authenticatedRequest` agrega el header Bearer a las llamadas protegidas.

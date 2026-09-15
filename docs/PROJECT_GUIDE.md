@@ -213,18 +213,26 @@ servicios, repositorios, modelos e interfaces cuando son necesarios.
 
 ### Registro
 
-1. El navegador envia email y password a `POST /api/auth/register`.
-2. El backend comprueba que el email no exista.
-3. BCrypt crea el hash del password.
-4. Una transaccion inserta `Users`, `UserProfiles` y `UserRoles`.
-5. El nombre inicial del perfil es la parte del email anterior a `@`.
-6. La API devuelve un JWT.
+1. El navegador valida email y longitud del password antes de enviar.
+2. El backend repite las reglas y elimina espacios exteriores del email.
+3. El navegador envia email y password a `POST /api/auth/register`.
+4. El backend comprueba que el email no exista.
+5. BCrypt crea el hash del password.
+6. Una transaccion inserta `Users`, `UserProfiles` y `UserRoles`.
+7. El nombre inicial del perfil es la parte del email anterior a `@`.
+8. La API devuelve un JWT.
 
 ### Login
 
-1. El navegador llama a `POST /api/auth/login`.
-2. El backend busca el usuario y verifica el hash con BCrypt.
-3. La API devuelve un JWT con dos horas de validez.
+1. El navegador valida email y longitud del password.
+2. El backend repite las reglas y normaliza el email.
+3. El navegador llama a `POST /api/auth/login`.
+4. El backend busca el usuario y verifica el hash con BCrypt.
+5. La API devuelve un JWT con dos horas de validez.
+
+En ambos flujos el email exige contenido antes de `@` y un dominio con al menos
+un punto. El password admite entre 6 y 20 caracteres. Una entrada invalida
+devuelve `400` antes de consultar el repositorio.
 
 ### Contenido y validacion del JWT
 
@@ -666,17 +674,17 @@ deploys o el numero de colaboradores.
 2. Configurar secretos, URLs HTTPS, WebSockets y health check en App Service.
 3. Publicar ambos artefactos y completar el smoke test multiusuario.
 
-La validacion adicional de email y password, la normalizacion del contrato de
-errores y el rate limiting de register/login se aplazan de forma consciente para
-esta primera practica. No bloquean el despliegue tecnico, pero deben completarse
-antes de mantener una URL publica abierta a trafico no controlado.
+La validacion basica de email y password ya se aplica en frontend y backend. La
+normalizacion completa del contrato de errores, politicas de password mas
+exigentes y el rate limiting de register/login se aplazan de forma consciente.
 
 El orden, comandos, smoke test y rollback estan en el
 [Deployment Plan](DEPLOYMENT_PLAN.md).
 
 ### Despues de la primera prueba publicada
 
-1. Validar estrictamente auth y agregar rate limiting a register/login.
+1. Ampliar las politicas de credenciales y agregar rate limiting a
+   register/login.
 2. Agregar integracion real con SQL Server y E2E de navegador para los flujos
    multiusuario.
 3. Decidir una estrategia de sesion mas resistente a XSS; el JWT vive ahora en

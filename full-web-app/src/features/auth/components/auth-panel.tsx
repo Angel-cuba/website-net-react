@@ -6,6 +6,12 @@ import { getErrorMessage } from "../../../utils/errors";
 import { login, register } from "../api/auth-api";
 import { useAuth } from "../hooks/use-auth";
 import type { AuthMode } from "../types/auth";
+import {
+  AUTH_PASSWORD_MAX_LENGTH,
+  AUTH_PASSWORD_MIN_LENGTH,
+  validateAuthCredentials,
+} from "../utils/auth-validation";
+import type { AuthValidationErrors } from "../utils/auth-validation";
 
 export function AuthPanel() {
   const {
@@ -20,20 +26,29 @@ export function AuthPanel() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [validationErrors, setValidationErrors] =
+    useState<AuthValidationErrors>({});
   const isLoading = status === "authenticating";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     clearAuthFeedback();
     setMessage("");
+
+    const validation = validateAuthCredentials({ email, password });
+    setValidationErrors(validation.errors);
+
+    if (!validation.isValid) {
+      return;
+    }
+
     beginAuthentication();
 
     try {
-      const credentials = { email, password };
       const response =
         mode === "login"
-          ? await login(credentials)
-          : await register(credentials);
+          ? await login(validation.credentials)
+          : await register(validation.credentials);
       const nextToken = response.data?.token;
 
       if (!nextToken) {
@@ -51,6 +66,7 @@ export function AuthPanel() {
   function changeMode(nextMode: AuthMode) {
     setMode(nextMode);
     setMessage("");
+    setValidationErrors({});
     clearAuthFeedback();
   }
 
@@ -84,41 +100,77 @@ export function AuthPanel() {
         </Button>
       </div>
 
-      <form aria-busy={isLoading} className="auth-form" onSubmit={handleSubmit}>
-        <label htmlFor="auth-email">
-          Email
+      <form
+        aria-busy={isLoading}
+        className="auth-form"
+        noValidate
+        onSubmit={handleSubmit}
+      >
+        <div className="auth-field">
+          <label htmlFor="auth-email">Email</label>
           <input
+            aria-describedby={validationErrors.email ? "auth-email-error" : undefined}
+            aria-invalid={Boolean(validationErrors.email)}
+            autoCapitalize="none"
             autoComplete="email"
             id="auth-email"
             name="email"
             onChange={(event) => {
               setEmail(event.target.value);
+              setValidationErrors((current) => ({
+                ...current,
+                email: undefined,
+              }));
               if (status === "error") clearAuthFeedback();
             }}
             required
+            spellCheck={false}
             type="email"
             value={email}
           />
-        </label>
+          {validationErrors.email && (
+            <span className="field-error" id="auth-email-error" role="alert">
+              {validationErrors.email}
+            </span>
+          )}
+        </div>
 
-        <label htmlFor="auth-password">
-          Password
+        <div className="auth-field">
+          <label htmlFor="auth-password">Password</label>
           <input
+            aria-describedby={
+              validationErrors.password ? "auth-password-error" : undefined
+            }
+            aria-invalid={Boolean(validationErrors.password)}
             autoComplete={
               mode === "login" ? "current-password" : "new-password"
             }
             id="auth-password"
-            minLength={6}
+            maxLength={AUTH_PASSWORD_MAX_LENGTH}
+            minLength={AUTH_PASSWORD_MIN_LENGTH}
             name="password"
             onChange={(event) => {
               setPassword(event.target.value);
+              setValidationErrors((current) => ({
+                ...current,
+                password: undefined,
+              }));
               if (status === "error") clearAuthFeedback();
             }}
             required
             type="password"
             value={password}
           />
-        </label>
+          {validationErrors.password && (
+            <span
+              className="field-error"
+              id="auth-password-error"
+              role="alert"
+            >
+              {validationErrors.password}
+            </span>
+          )}
+        </div>
 
         <Button disabled={isLoading} type="submit" variant="primary">
           {mode === "login" ? (

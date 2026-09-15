@@ -111,7 +111,7 @@ export function AppShell({ activePath, children, onNavigate }: AppShellProps) {
             W
           </span>
           <div>
-            <strong>Wapp2</strong>
+            <strong>Wappy</strong>
             <span>Task workspace</span>
           </div>
         </div>
@@ -131,14 +131,17 @@ export function AppShell({ activePath, children, onNavigate }: AppShellProps) {
                     >
                       <Icon aria-hidden="true" />
                       <span>{label}</span>
-                      {path === "/invitations" && pendingInvitationCount > 0 && (
-                        <span
-                          aria-label={`${pendingInvitationCount} pending invitation${pendingInvitationCount === 1 ? "" : "s"}`}
-                          className="nav-notification-badge"
-                        >
-                          {pendingInvitationCount > 99 ? "99+" : pendingInvitationCount}
-                        </span>
-                      )}
+                      {path === "/invitations" &&
+                        pendingInvitationCount > 0 && (
+                          <span
+                            aria-label={`${pendingInvitationCount} pending invitation${pendingInvitationCount === 1 ? "" : "s"}`}
+                            className="nav-notification-badge"
+                          >
+                            {pendingInvitationCount > 99
+                              ? "99+"
+                              : pendingInvitationCount}
+                          </span>
+                        )}
                     </a>
                   </li>
                 ))}

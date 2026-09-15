@@ -4,6 +4,7 @@ using Wapp2.Auth.DTOs;
 using Wapp2.Users.Interfaces;
 using Wapp2.Users.Models;
 using Wapp2.Shared.Middleware;
+using Wapp2.Auth.Validation;
 
 namespace Wapp2.Auth.Services
 {
@@ -20,7 +21,8 @@ namespace Wapp2.Auth.Services
 
         public async Task<AuthResponse> Register(RegisterRequest request)
         {
-            var existingUser = await userRepository.GetUserByEmail(request.Email);
+            var email = AuthCredentialsValidator.Validate(request.Email, request.Password);
+            var existingUser = await userRepository.GetUserByEmail(email);
             if (existingUser != null)
             {
                 throw new ErrorHandlingMiddlewareException("User already exists.", HttpStatusCode.Conflict);
@@ -28,11 +30,11 @@ namespace Wapp2.Auth.Services
 
             var user = new UserModel
             {
-                Email = request.Email,
+                Email = email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password)
             };
 
-            var firstName = request.Email.Split('@')[0];
+            var firstName = email.Split('@')[0];
 
             var createdUser = await userRepository.CreateUserWithProfileAndRole(
                 user,
@@ -48,7 +50,8 @@ namespace Wapp2.Auth.Services
 
         public async Task<AuthResponse> Login(LoginRequest request)
         {
-            var user = await userRepository.GetUserByEmail(request.Email);
+            var email = AuthCredentialsValidator.Validate(request.Email, request.Password);
+            var user = await userRepository.GetUserByEmail(email);
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             {
                 throw new ErrorHandlingMiddlewareException("Invalid email or password.", HttpStatusCode.Unauthorized);

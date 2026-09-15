@@ -148,6 +148,12 @@ label {
   font-weight: 500;
 }
 
+.field-error {
+  color: var(--color-danger);
+  font-size: 0.6875rem;
+  font-weight: 650;
+}
+
 input,
 select,
 textarea {
@@ -177,6 +183,14 @@ select:focus,
 textarea:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgb(22 115 74 / 14%);
+}
+
+input[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+input[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px rgb(180 45 35 / 12%);
 }
 
 .auth-panel {
@@ -217,6 +231,12 @@ textarea:focus {
 .auth-form {
   display: grid;
   gap: var(--space-4);
+}
+
+.auth-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
 }
 
 .auth-form .button {
