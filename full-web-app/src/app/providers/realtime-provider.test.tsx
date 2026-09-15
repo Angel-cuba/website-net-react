@@ -56,6 +56,7 @@ describe('RealtimeProvider', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     localStorage.clear()
+    sessionStorage.clear()
     authMock.current = { isAuthenticated: false, user: null }
     signalRMock.handlers.clear()
     vi.clearAllMocks()

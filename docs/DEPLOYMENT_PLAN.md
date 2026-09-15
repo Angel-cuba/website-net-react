@@ -120,9 +120,10 @@ Antes de abrir la URL igualmente se debe:
 - decidir una duracion razonable del token para pruebas;
 - confirmar que no existen secretos en Git ni en los artefactos de build.
 
-Guardar JWT en `localStorage` se acepta temporalmente para este ambiente de
-estudio, con el riesgo XSS documentado. Una publicacion dirigida a usuarios
-externos debe evaluar cookies `HttpOnly`, `Secure` y `SameSite`.
+Guardar JWT en `sessionStorage` se acepta temporalmente para este ambiente de
+estudio. Esto aisla las sesiones por pestana, pero no elimina el riesgo XSS
+porque JavaScript todavia puede acceder al token. Una publicacion dirigida a
+usuarios externos debe evaluar cookies `HttpOnly`, `Secure` y `SameSite`.
 
 ### 4.5 Fallback de la SPA
 
@@ -459,7 +460,7 @@ Estos puntos no bloquean la primera prueba controlada, pero deben revisarse ante
 de presentar Wapp2 como un producto listo para usuarios externos:
 
 1. Validar email y password y agregar rate limiting a register/login.
-2. Migrar la sesion desde `localStorage` a una estrategia resistente a XSS.
+2. Migrar la sesion desde `sessionStorage` a una estrategia resistente a XSS.
 3. Agregar tests de integracion reales contra SQL Server y E2E de navegador.
 4. Publicar OpenAPI y normalizar el envelope de respuestas HTTP.
 5. Incorporar upload de avatar en lugar de aceptar solo una URL.

@@ -103,7 +103,8 @@ React Router.
 
 ## Sesion y HTTP
 
-- El JWT se guarda en `localStorage` bajo `wapp2.auth.token`.
+- El JWT se guarda en `sessionStorage` bajo `wapp2.auth.token`; cada pestana
+  mantiene una sesion independiente para evitar mezclar cuentas.
 - `authenticatedRequest` agrega el header Bearer a las llamadas protegidas.
 - Una respuesta `401` expira la sesion local.
 - El cliente interpreta la expiracion del JWT y cierra la sesion cuando llega.
