@@ -1,0 +1,74 @@
+name: Deploy frontend to Azure
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "full-web-app/**"
+      - ".github/workflows/deploy-frontend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wapp2-frontend-production
+  cancel-in-progress: true
+
+jobs:
+  build-test-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: full-web-app/.nvmrc
+          cache: npm
+          cache-dependency-path: full-web-app/package-lock.json
+
+      - name: Install dependencies
+        working-directory: full-web-app
+        run: npm ci
+
+      - name: Run lint
+        working-directory: full-web-app
+        run: npm run lint
+
+      - name: Run tests
+        working-directory: full-web-app
+        run: npm run test
+
+      - name: Build frontend
+        working-directory: full-web-app
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+        run: npm run build
+
+      - name: Verify production bundle
+        working-directory: full-web-app
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+        run: |
+          test -n "$VITE_API_URL"
+          test -f dist/index.html
+          test -f dist/staticwebapp.config.json
+          grep -R -Fq "$VITE_API_URL" dist/assets
+          if grep -R -Eq 'http://(localhost|127\.0\.0\.1)' dist; then
+            echo "Local API URL found in the production bundle."
+            exit 1
+          fi
+
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: upload
+          app_location: full-web-app/dist
+          output_location: ""
+          skip_app_build: true
+          production_branch: main
