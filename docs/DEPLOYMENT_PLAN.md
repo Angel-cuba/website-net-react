@@ -62,8 +62,8 @@ un backplane compatible.
 - una tabla o mecanismo que registre migraciones aplicadas.
 
 La baseline y `20260910_001_task_sharing_constraints.sql` fueron probadas sobre
-una base local vacia. Ambas registran su aplicacion y se pueden volver a ejecutar
-sin dejar un esquema parcial. Falta repetir la validacion sobre Azure SQL.
+una base local vacia y despues sobre Azure SQL. Ambas registran su aplicacion y
+se pueden volver a ejecutar sin dejar un esquema parcial.
 
 ### 4.2 Configuracion por ambiente
 
@@ -101,9 +101,9 @@ Ya estan disponibles:
 Durante la primera publicacion todavia se debe habilitar App Service log stream
 y comprobar que los logs no incluyan JWT, passwords ni connection strings.
 
-App Service puede consultar periodicamente una ruta de health check y retirar
-instancias que no respondan. Aunque se use una sola instancia, el endpoint
-tambien ayuda a distinguir fallos de aplicacion y de base de datos.
+App Service consulta `/health/live`, que no despierta ni depende de Azure SQL.
+`/health/ready` queda como diagnostico de conectividad. Esta separacion evita que
+el auto-pause de una base serverless marque el proceso web como caido.
 
 ### 4.4 Validacion y exposicion publica
 
@@ -166,7 +166,7 @@ seleccionar la suscripcion correcta:
 ```bash
 az login
 az account show
-npm install -g @azure/static-web-apps-cli
+npx --yes @azure/static-web-apps-cli@2.0.10 --version
 ```
 
 Definir nombres unicos sin guardar secretos en el shell history:
@@ -216,7 +216,7 @@ En App Service:
 - habilitar WebSockets;
 - mantener session affinity mientras SignalR viva dentro de la API;
 - forzar HTTPS;
-- configurar `/health/ready` como health check cuando exista;
+- configurar `/health/live` como health check;
 - mantener una sola instancia.
 
 ### 6.3 Azure SQL Database
@@ -239,6 +239,32 @@ La opcion preferida para la conexion de runtime es una managed identity de App
 Service autorizada solo sobre `Wapp2DB`. Para una primera prueba tambien se puede
 usar autenticacion SQL, guardando la connection string en App Service, y migrar
 a managed identity antes de considerar el ambiente endurecido.
+
+Con `Microsoft.Data.SqlClient` 7, el proyecto tambien debe referenciar
+`Microsoft.Data.SqlClient.Extensions.Azure` para resolver
+`Active Directory Managed Identity`. El paquete registra automaticamente el
+proveedor; no hace falta inicializacion adicional en `Program.cs`.
+
+Crear el usuario externo desde una sesion con permisos de administrador de
+Microsoft Entra y conceder solo las operaciones que ejecutan los repositorios:
+
+```sql
+CREATE USER [<api-app-name>] FROM EXTERNAL PROVIDER;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON OBJECT::dbo.Users TO [<api-app-name>];
+GRANT SELECT, INSERT, UPDATE, DELETE ON OBJECT::dbo.UserProfiles TO [<api-app-name>];
+GRANT SELECT ON OBJECT::dbo.Roles TO [<api-app-name>];
+GRANT SELECT, INSERT, DELETE ON OBJECT::dbo.UserRoles TO [<api-app-name>];
+GRANT SELECT, INSERT, UPDATE, DELETE ON OBJECT::dbo.Tasks TO [<api-app-name>];
+GRANT SELECT, INSERT, UPDATE, DELETE ON OBJECT::dbo.TaskInvitations TO [<api-app-name>];
+GRANT SELECT, INSERT, UPDATE, DELETE ON OBJECT::dbo.TaskAccess TO [<api-app-name>];
+GRANT DELETE ON OBJECT::dbo.Notifications TO [<api-app-name>];
+GRANT SELECT (UserId) ON OBJECT::dbo.Notifications TO [<api-app-name>];
+```
+
+El ultimo permiso permite aplicar el predicado
+`DELETE FROM dbo.Notifications WHERE UserId = @UserId` sin conceder lectura de
+las columnas con contenido de la notificacion.
 
 No habilitar `Allow Azure services` sin comprender su alcance: permite intentos
 de conexion desde recursos Azure de otras suscripciones. Preferir reglas de red
@@ -282,7 +308,7 @@ ASPNETCORE_ENVIRONMENT=Production
 ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
 Jwt__Secret=<secret>
 Jwt__Issuer=https://<api-host>
-Jwt__Audience=https://<frontend-host>
+Jwt__Audience=https://<api-host>
 Cors__AllowedOrigins__0=https://<frontend-host>
 WEBSITE_RUN_FROM_PACKAGE=1
 ```
@@ -321,7 +347,9 @@ Generar un artefacto Release fuera del repositorio:
 ```bash
 dotnet publish wapp2/wapp2.csproj \
   --configuration Release \
-  --output /tmp/wapp2-api
+  --output /tmp/wapp2-api \
+  --no-self-contained \
+  -p:UseAppHost=false
 
 (cd /tmp/wapp2-api && zip -r /tmp/wapp2-api.zip .)
 
@@ -346,13 +374,20 @@ Construir de nuevo con la URL final de la API:
 ```bash
 cd full-web-app
 VITE_API_URL=https://<api-host> npm run build
-swa login --resource-group "$AZURE_RESOURCE_GROUP" --app-name "$STATIC_APP_NAME"
-swa deploy ./dist --env production
+DEPLOYMENT_TOKEN="$(az staticwebapp secrets list \
+  --resource-group "$AZURE_RESOURCE_GROUP" \
+  --name "$STATIC_APP_NAME" \
+  --query properties.apiKey \
+  --output tsv)"
+npx --yes @azure/static-web-apps-cli@2.0.10 deploy ./dist \
+  --env production \
+  --deployment-token "$DEPLOYMENT_TOKEN"
+unset DEPLOYMENT_TOKEN
 ```
 
 Comprobar que `dist/staticwebapp.config.json` existe antes de ejecutar
-`swa deploy`. No guardar el deployment token en `.env`, documentos, capturas ni
-historial de terminal.
+el deploy. No guardar el deployment token en `.env`, documentos, capturas ni
+historial de terminal, y eliminarlo de la sesion al terminar.
 
 ## 12. Smoke test en el ambiente publicado
 
@@ -435,12 +470,48 @@ de presentar Wapp2 como un producto listo para usuarios externos:
 10. Considerar CI cuando el proyecto tenga despliegues frecuentes o mas
    colaboradores. Hasta entonces, mantener la checklist local como requisito.
 
-## 16. Referencias oficiales
+## 16. Resultado del primer despliegue
+
+El ambiente `study` se valido el 15 de septiembre de 2026 con esta distribucion:
+
+| Recurso | Nombre | Region |
+| --- | --- | --- |
+| Resource group | `rg-wapp2-study-b965ce` | West Europe |
+| Static Web App | `wapp2-web-b965ce` | East US 2 |
+| App Service y plan F1 | `wapp2-api-b965ce` | Italy North |
+| Azure SQL serverless | `wapp2-sql-b965ce` / `Wapp2DB` | Italy North |
+
+URLs publicadas:
+
+- frontend: `https://ashy-tree-0fff2680f.5.azurestaticapps.net`;
+- API: `https://wapp2-api-b965ce.azurewebsites.net`.
+
+La separacion regional se debio a la disponibilidad de altas para la suscripcion
+de estudio. No cambia el contrato entre SPA y API, aunque debe revisarse antes
+de usar el sistema con trafico o datos reales.
+
+Evidencia del cierre:
+
+- baseline y migracion `20260910_001_task_sharing_constraints` aplicadas;
+- Managed Identity conectada a Azure SQL sin password;
+- `/health/live` y `/health/ready` respondieron `200`;
+- build backend Release, `66` tests backend, lint y `95` tests frontend pasaron;
+- bundle Vite sin referencias a `localhost` y fallback SPA activo;
+- CORS acepto exclusivamente el origen HTTPS publicado;
+- registro, perfil, tareas, invitacion, badge realtime, aceptacion, permiso de
+  edicion, actualizacion compartida, revocacion y borrado de cuenta se probaron
+  desde dos sesiones del frontend;
+- las cuentas y tareas temporales se eliminaron al terminar;
+- la regla temporal `AllowCurrentClient` del firewall se cerro despues de las
+  migraciones.
+
+## 17. Referencias oficiales
 
 - [Publicar ASP.NET Core SignalR en Azure App Service](https://learn.microsoft.com/aspnet/core/signalr/publish-to-azure-web-app?view=aspnetcore-10.0)
 - [Deploy ZIP en Azure App Service](https://learn.microsoft.com/azure/app-service/deploy-zip)
 - [Configurar Azure Static Web Apps](https://learn.microsoft.com/azure/static-web-apps/configuration)
 - [Static Web Apps CLI](https://learn.microsoft.com/azure/static-web-apps/static-web-apps-cli)
 - [Conectar App Service con Azure SQL mediante managed identity](https://learn.microsoft.com/azure/app-service/tutorial-connect-msi-sql-database)
+- [Microsoft.Data.SqlClient.Extensions.Azure](https://www.nuget.org/packages/Microsoft.Data.SqlClient.Extensions.Azure)
 - [Firewall de Azure SQL Database](https://learn.microsoft.com/azure/azure-sql/database/firewall-configure?view=azuresql)
 - [Health checks de ASP.NET Core](https://learn.microsoft.com/aspnet/core/host-and-deploy/health-checks?view=aspnetcore-10.0)
