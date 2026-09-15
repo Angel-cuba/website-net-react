@@ -74,7 +74,7 @@ export function AuthPanel() {
     <section aria-labelledby="auth-heading" className="auth-panel">
       <div className="auth-heading">
         <p className="eyebrow">Private workspace</p>
-        <h1 id="auth-heading">Welcome to Wapp2</h1>
+        <h1 id="auth-heading">Welcome to Wappy</h1>
       </div>
 
       <div

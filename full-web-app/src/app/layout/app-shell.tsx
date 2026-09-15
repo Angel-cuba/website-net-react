@@ -84,7 +84,7 @@ export function AppShell({ activePath, children, onNavigate }: AppShellProps) {
             <span className="brand-mark" aria-hidden="true">
               W
             </span>
-            <span>Wapp2</span>
+            <span>Wappy</span>
           </a>
           <IconButton
             aria-controls="app-sidebar"
@@ -106,7 +106,7 @@ export function AppShell({ activePath, children, onNavigate }: AppShellProps) {
         className={`sidebar ${isMenuOpen ? "is-open" : ""}`}
         id="app-sidebar"
       >
-        <div className="sidebar-brand" aria-label="Wapp2">
+        <div className="sidebar-brand" aria-label="Wappy">
           <span className="brand-mark" aria-hidden="true">
             W
           </span>

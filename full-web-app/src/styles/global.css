@@ -23,6 +23,12 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  background: var(--color-canvas);
+}
+
+::selection {
+  background: var(--color-accent-soft);
+  color: var(--color-text);
 }
 
 a {
@@ -50,7 +56,7 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid rgb(22 115 74 / 28%);
+  outline: 3px solid rgb(33 107 73 / 26%);
   outline-offset: 2px;
 }
 

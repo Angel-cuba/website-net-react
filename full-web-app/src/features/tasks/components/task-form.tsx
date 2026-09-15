@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { Plus, Save, X } from "lucide-react";
+import { ChevronDown, Plus, Save, X } from "lucide-react";
 import { Button } from "../../../components/button";
 import { getMinimumDueDateInputValue, toDateTimeInputValue } from "../../../utils/date";
 import type { TaskItem, TaskPayload } from "../types/task";
@@ -133,42 +133,55 @@ export function TaskForm({
 
         <label htmlFor="task-category">
           Category
-          <select
-            id="task-category"
-            onChange={(event) => setForm({ ...form, category: event.target.value })}
-            value={form.category}
-          >
-            <option>Backend</option>
-            <option>Frontend</option>
-            <option>Database</option>
-            <option>Testing</option>
-          </select>
+          <span className="select-control">
+            <select
+              id="task-category"
+              onChange={(event) =>
+                setForm({ ...form, category: event.target.value })
+              }
+              value={form.category}
+            >
+              <option>Backend</option>
+              <option>Frontend</option>
+              <option>Database</option>
+              <option>Testing</option>
+            </select>
+            <ChevronDown aria-hidden="true" />
+          </span>
         </label>
 
         <label htmlFor="task-priority">
           Priority
-          <select
-            id="task-priority"
-            onChange={(event) => setForm({ ...form, priority: event.target.value })}
-            value={form.priority}
-          >
-            <option>Low</option>
-            <option>Medium</option>
-            <option>High</option>
-          </select>
+          <span className="select-control">
+            <select
+              id="task-priority"
+              onChange={(event) =>
+                setForm({ ...form, priority: event.target.value })
+              }
+              value={form.priority}
+            >
+              <option>Low</option>
+              <option>Medium</option>
+              <option>High</option>
+            </select>
+            <ChevronDown aria-hidden="true" />
+          </span>
         </label>
 
         <label htmlFor="task-status">
           Status
-          <select
-            id="task-status"
-            onChange={(event) => updateStatus(event.target.value)}
-            value={form.status}
-          >
-            <option value="pending">Pending</option>
-            <option value="in-progress">In progress</option>
-            <option value="completed">Completed</option>
-          </select>
+          <span className="select-control">
+            <select
+              id="task-status"
+              onChange={(event) => updateStatus(event.target.value)}
+              value={form.status}
+            >
+              <option value="pending">Pending</option>
+              <option value="in-progress">In progress</option>
+              <option value="completed">Completed</option>
+            </select>
+            <ChevronDown aria-hidden="true" />
+          </span>
         </label>
 
         <label htmlFor="task-due-date">
