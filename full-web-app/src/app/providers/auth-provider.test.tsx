@@ -13,6 +13,7 @@ const emailClaim =
 describe('AuthProvider', () => {
   beforeEach(() => {
     localStorage.clear()
+    sessionStorage.clear()
   })
 
   afterEach(() => {

@@ -239,9 +239,11 @@ ASP.NET Core valida firma, issuer, audience y expiracion. Despues comprueba que
 la cuenta siga existiendo. Esto invalida de forma efectiva el token de una cuenta
 eliminada aunque aun no haya llegado su fecha de expiracion.
 
-El frontend guarda actualmente el token en `localStorage` con la clave
-`wapp2.auth.token`, extrae ID, email y expiracion para representar la sesion y lo
-envia como `Authorization: Bearer <token>` en las llamadas protegidas.
+El frontend guarda actualmente el token en `sessionStorage` con la clave
+`wapp2.auth.token`. Cada pestana mantiene una sesion independiente, extrae ID,
+email y expiracion para representar al usuario y envia el JWT como
+`Authorization: Bearer <token>` en las llamadas protegidas. Los tokens que
+quedaran en `localStorage` de versiones anteriores se descartan.
 
 ## 8. Flujo de tareas
 
@@ -678,7 +680,7 @@ El orden, comandos, smoke test y rollback estan en el
 2. Agregar integracion real con SQL Server y E2E de navegador para los flujos
    multiusuario.
 3. Decidir una estrategia de sesion mas resistente a XSS; el JWT vive ahora en
-   `localStorage`.
+   `sessionStorage` y sigue siendo accesible para JavaScript.
 4. Activar OpenAPI/Swagger o publicar un contrato versionado.
 5. Configurar un backplane SignalR solo si se ejecutan varias instancias.
 6. Definir emails reales y notificaciones persistentes si el producto los

@@ -7,6 +7,7 @@ describe('authenticatedRequest', () => {
 
   beforeEach(() => {
     localStorage.clear()
+    sessionStorage.clear()
     vi.stubGlobal('fetch', fetchMock)
   })
 
