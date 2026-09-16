@@ -73,7 +73,7 @@ src/
 |   |-- layout/       # shell y navegacion
 |   |-- providers/    # auth, profile, invitations y realtime
 |   `-- router/       # rutas con History API
-|-- components/       # Button, IconButton y EmptyState
+|-- components/       # controles compartidos, incluido SelectField
 |-- features/
 |   |-- auth/
 |   |-- invitations/
@@ -101,6 +101,11 @@ Cada feature mantiene cerca sus componentes, hooks, tipos y llamadas API.
 La aplicacion usa una navegacion ligera con `window.history`; no depende de
 React Router.
 
+En escritorio, las rutas viven en una barra lateral fija. En viewports de hasta
+`768px`, la aplicacion usa una cabecera con drawer y una navegacion inferior. La
+barra inferior se oculta mientras el drawer esta abierto para evitar controles
+duplicados.
+
 ## Sesion y HTTP
 
 - Login y registro exigen un email con usuario, `@` y dominio con extension.
@@ -124,15 +129,25 @@ http://localhost:5104/hubs/notifications
 Los eventos `InvitationsChanged`, `SharedTasksChanged` y
 `TaskSharingChanged` incrementan revisiones internas. Los hooks afectados
 vuelven a consultar la API para recuperar el estado vigente desde SQL Server.
+La interfaz no expone controles de refresco manual: realiza una carga HTTP
+inicial, aplica localmente las mutaciones correctas y usa SignalR para invalidar
+y sincronizar los recursos afectados.
 
-## UI de tareas
+## UI y tareas
 
+- El formulario de creacion permanece plegado hasta seleccionar `New task`.
 - La vista principal combina tareas propias y tareas compartidas aceptadas.
 - Solo las tareas propias muestran compartir y eliminar.
 - Una tarea compartida indica su owner y el permiso actual.
 - Los controles de edicion y completado solo aparecen con `CanEdit`.
 - El formulario exige una fecha limite de al menos cinco horas desde el momento
   actual.
+- Los selectores de categoria, prioridad y estado usan Radix UI para mantener
+  teclado, foco y opciones consistentes entre navegadores.
+- Las tarjetas usan un acento pastel por categoria sin cambiar la semantica de
+  prioridad o estado.
+- `Shared tasks` separa `Shared with you` y `Shared by you` mediante un control
+  segmentado con sus respectivos conteos.
 
 ## Dependencias principales
 
@@ -141,6 +156,7 @@ vuelven a consultar la API para recuperar el estado vigente desde SQL Server.
 - Vite y `@vitejs/plugin-react`;
 - Vitest, jsdom y Testing Library;
 - `@microsoft/signalr`;
+- `@radix-ui/react-select`;
 - `lucide-react`;
 - ESLint y `typescript-eslint`.
 

@@ -67,6 +67,7 @@ La referencia completa del sistema esta en:
 - TypeScript 6;
 - Vite 8;
 - Microsoft SignalR client;
+- Radix UI Select;
 - Lucide React;
 - ESLint.
 
@@ -164,16 +165,17 @@ Server y end-to-end de navegador. Consulta los
 [proximos pasos](docs/PROJECT_GUIDE.md#18-proximos-pasos-y-estado-de-produccion)
 y el [plan de despliegue](docs/DEPLOYMENT_PLAN.md).
 
-## Proximo hito
+## Estado de despliegue
 
-El siguiente objetivo es publicar un ambiente Azure de estudio mediante un
-proceso manual. La baseline reproducible, CORS por ambiente, health checks y la
-regla de fecha del backend ya estan preparados. El fallback de la SPA tambien
-forma parte del build de produccion. Quedan la configuracion de los recursos
-Azure, la migracion de la base remota y el smoke test publicado. La validacion
-basica de email y password ya se aplica en frontend y backend. Politicas de
-credenciales mas exigentes y rate limiting se mantienen como hardening pendiente
-antes de exponer el proyecto de forma prolongada a usuarios externos.
+El ambiente Azure de estudio esta publicado con Static Web Apps, App Service y
+Azure SQL. El frontend ejecuta lint, tests y build en GitHub Actions antes de
+publicarse cuando `main` recibe cambios dentro de `full-web-app`; el backend
+conserva por ahora un despliegue ZIP manual. El inventario, smoke test y
+procedimiento de rollback estan en el [Deployment Plan](docs/DEPLOYMENT_PLAN.md).
+
+Los siguientes hitos son automatizar pruebas E2E multiusuario, endurecer
+credenciales y rate limiting, y decidir si el backend necesita tambien un flujo
+de despliegue automatizado.
 
 ## Seguridad y permisos
 

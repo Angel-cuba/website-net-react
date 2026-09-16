@@ -71,6 +71,7 @@ reemplace a SQL Server en el flujo actual.
 | Vite | `8.2.2` | Desarrollo y build |
 | `@vitejs/plugin-react` | `6.1.0` | Integracion React con Vite |
 | `@microsoft/signalr` | `10.0.11` | Cliente realtime |
+| `@radix-ui/react-select` | `2.3.7` | Selectores accesibles y consistentes |
 | `lucide-react` | `1.42.0` | Iconografia |
 | ESLint | `10.9.0` | Analisis estatico |
 | `typescript-eslint` | `8.67.0` | Reglas ESLint para TypeScript |
@@ -199,7 +200,7 @@ servicios, repositorios, modelos e interfaces cuando son necesarios.
 ### Notifications
 
 - expone el hub autenticado `/hubs/notifications`;
-- publica eventos ligeros para que el frontend recargue datos;
+- publica eventos ligeros para que el frontend sincronice datos automaticamente;
 - no guarda un inbox de notificaciones desde este modulo ni envia emails.
 
 ### Shared
@@ -338,6 +339,12 @@ El cliente usa reconexion automatica y reintenta el primer arranque cada cinco
 segundos. En una instalacion con varias instancias de backend hara falta un
 backplane, por ejemplo Redis, para distribuir eventos entre nodos.
 
+La SPA no presenta botones de refresco manual. Cada recurso se carga por HTTP al
+entrar en la sesion o vista correspondiente; despues, las mutaciones actualizan
+el estado local y los eventos SignalR fuerzan una nueva lectura del recurso
+afectado. Recargar el navegador queda como herramienta de diagnostico, no como
+parte del flujo habitual.
+
 ## 11. Permisos
 
 | Operacion | Owner | Colaborador view-only | Colaborador CanEdit | Otro usuario |
@@ -365,6 +372,18 @@ un colaborador view-only responde `403`.
 
 La navegacion es una implementacion ligera con History API. El proyecto no usa
 React Router actualmente.
+
+### Comportamiento responsive
+
+- En escritorio, la navegacion principal permanece en una barra lateral fija.
+- Hasta `768px`, una cabecera abre el drawer completo y una barra inferior ofrece
+  acceso directo a las cuatro rutas.
+- La barra inferior se oculta mientras el drawer esta abierto para evitar dos
+  navegaciones activas al mismo tiempo.
+- El compositor de tareas se abre bajo demanda y las tarjetas reorganizan sus
+  acciones sin comprimir el titulo en viewports estrechos.
+- Los selectores del formulario usan Radix UI y conservan navegacion por teclado,
+  foco visible y opciones renderizadas dentro de un portal.
 
 ## 13. API HTTP
 
@@ -638,7 +657,9 @@ lsof -nP -iTCP:5173 -sTCP:LISTEN
 - confirmar que API y frontend usan los puertos esperados;
 - revisar la negociacion de `/hubs/notifications` en Network;
 - comprobar que el JWT sigue vigente;
-- usar `Refresh` para distinguir un fallo de SignalR de un fallo HTTP o SQL.
+- comprobar que el evento SignalR va seguido de la consulta HTTP esperada;
+- si llega el evento pero falla la consulta, revisar API y SQL; si no llega el
+  evento, revisar la conexion del hub y sus logs.
 
 ### `403` al editar una tarea compartida
 
@@ -651,12 +672,11 @@ autorizados con `404`.
 
 ## 18. Proximos pasos y estado de produccion
 
-La aplicacion es funcional y tiene una base de regresion local. El siguiente
-hito es un ambiente Azure de estudio desplegado manualmente. CI no es necesario
-en esta etapa y queda como mejora opcional para cuando aumente la frecuencia de
-deploys o el numero de colaboradores.
+La aplicacion es funcional, mantiene una base de regresion local y dispone de un
+ambiente Azure de estudio validado. El frontend se publica desde `main` mediante
+GitHub Actions; el backend conserva un despliegue ZIP manual.
 
-### Preparacion completada
+### Preparacion y publicacion completadas
 
 1. La baseline crea el esquema completo y fue validada sobre una base local
    vacia junto con la migracion incremental de task sharing.
@@ -667,12 +687,11 @@ deploys o el numero de colaboradores.
 4. El backend replica la fecha minima de cinco horas al crear y actualizar.
 5. El build de Vite incluye el fallback de rutas y headers iniciales para Azure
    Static Web Apps.
-
-### Pendiente para la primera publicacion controlada
-
-1. Crear Azure SQL y aplicar baseline y migraciones sobre la base vacia.
-2. Configurar secretos, URLs HTTPS, WebSockets y health check en App Service.
-3. Publicar ambos artefactos y completar el smoke test multiusuario.
+6. Azure SQL recibio baseline y migraciones; App Service usa Managed Identity y
+   expone health checks saludables.
+7. SPA y API se publicaron y completaron un smoke test multiusuario.
+8. El workflow `deploy-frontend.yml` ejecuta instalacion reproducible, lint,
+   tests, build, comprobaciones del bundle y deploy de la SPA.
 
 La validacion basica de email y password ya se aplica en frontend y backend. La
 normalizacion completa del contrato de errores, politicas de password mas
@@ -696,8 +715,7 @@ El orden, comandos, smoke test y rollback estan en el
 7. Implementar upload de avatar; actualmente solo se guarda una URL externa.
 8. Revisar identificadores heredados como `RootNamespace=EmployeeManagementApi`.
 9. Ensayar backup, restore, rotacion de secretos y migraciones compensatorias.
-10. Considerar CI para automatizar la puerta local cuando aporte valor al flujo
-   de trabajo.
+10. Decidir si el backend necesita CI/CD cuando aumente su frecuencia de cambio.
 
 ## 19. Decisiones que deben mantenerse
 
@@ -756,7 +774,19 @@ Se creo esta guia y un plan de despliegue manual. La rama
 
 ### Etapa 6: primer despliegue
 
-En curso. Al terminar se registraran aqui la arquitectura realmente publicada,
-el orden comprobado, los comandos reutilizables, los resultados del smoke test,
-los problemas encontrados y el procedimiento de cierre. Los nombres sensibles,
-tokens y credenciales no formaran parte del documento.
+El ambiente Azure de estudio se publico con Static Web Apps, App Service Linux y
+Azure SQL. La base recibio baseline y migracion, la API se conecto mediante
+Managed Identity y los health checks respondieron correctamente. El smoke test
+multiusuario valido autenticacion, perfil, tareas, invitaciones, permisos,
+SignalR y limpieza final. El frontend incorporo despues un workflow de GitHub
+Actions para validar y desplegar cambios de `main`; el backend permanece manual.
+
+### Etapa 7: rebranding responsive
+
+El frontend adopto una identidad visual calida y contenida mediante tokens de
+color, sombras breves y acentos por categoria. El formulario de tareas paso a un
+compositor plegable, los selects nativos se sustituyeron por Radix UI y la vista
+de sharing separa tareas recibidas y administradas. En movil se agregaron drawer
+y navegacion inferior coordinados. Los controles de refresco manual se retiraron
+porque la carga inicial, las mutaciones locales y SignalR cubren la sincronizacion
+del estado.
