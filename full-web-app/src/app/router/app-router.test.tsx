@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { InvitationItem } from '../../features/invitations/types/invitation'
@@ -108,8 +108,9 @@ describe('AppRouter and AppShell', () => {
 
     render(<AppRouter />)
 
+    const mainNavigation = screen.getByRole('navigation', { name: 'Main navigation' })
     expect(screen.getByRole('heading', { name: 'Invitations view' })).toBeVisible()
-    expect(screen.getByRole('link', { name: /Invitations/ })).toHaveAttribute(
+    expect(within(mainNavigation).getByRole('link', { name: /Invitations/ })).toHaveAttribute(
       'aria-current',
       'page',
     )
@@ -126,12 +127,13 @@ describe('AppRouter and AppShell', () => {
     const user = userEvent.setup()
     authenticate()
     render(<AppRouter />)
+    const mainNavigation = screen.getByRole('navigation', { name: 'Main navigation' })
 
-    await user.click(screen.getByRole('link', { name: 'Shared tasks' }))
+    await user.click(within(mainNavigation).getByRole('link', { name: 'Shared tasks' }))
     expect(window.location.pathname).toBe('/shared')
     expect(screen.getByRole('heading', { name: 'Shared tasks view' })).toBeVisible()
 
-    await user.click(screen.getByRole('link', { name: 'Profile' }))
+    await user.click(within(mainNavigation).getByRole('link', { name: 'Profile' }))
     expect(window.location.pathname).toBe('/profile')
     expect(screen.getByRole('heading', { name: 'Profile view' })).toBeVisible()
   })
@@ -145,8 +147,9 @@ describe('AppRouter and AppShell', () => {
       window.dispatchEvent(new PopStateEvent('popstate'))
     })
 
+    const mainNavigation = screen.getByRole('navigation', { name: 'Main navigation' })
     expect(screen.getByRole('heading', { name: 'Profile view' })).toBeVisible()
-    expect(screen.getByRole('link', { name: 'Profile' })).toHaveAttribute(
+    expect(within(mainNavigation).getByRole('link', { name: 'Profile' })).toHaveAttribute(
       'aria-current',
       'page',
     )

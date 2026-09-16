@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { ChevronDown, Plus, Save, X } from "lucide-react";
+import { Plus, Save, X } from "lucide-react";
 import { Button } from "../../../components/button";
+import { SelectField } from "../../../components/select-field";
 import { getMinimumDueDateInputValue, toDateTimeInputValue } from "../../../utils/date";
 import type { TaskItem, TaskPayload } from "../types/task";
 
@@ -26,6 +27,21 @@ const createEmptyTaskForm = (): TaskPayload => ({
   priority: "Medium",
   status: "pending",
 });
+
+const categoryOptions = ["Backend", "Frontend", "Database", "Testing"].map(
+  (value) => ({ label: value, value }),
+);
+
+const priorityOptions = ["Low", "Medium", "High"].map((value) => ({
+  label: value,
+  value,
+}));
+
+const statusOptions = [
+  { label: "Pending", value: "pending" },
+  { label: "In progress", value: "in-progress" },
+  { label: "Completed", value: "completed" },
+];
 
 type TaskFormProps = {
   disabled: boolean;
@@ -110,6 +126,7 @@ export function TaskForm({
         <label className="primary-field" htmlFor="task-title">
           Title
           <input
+            disabled={disabled}
             id="task-title"
             maxLength={150}
             onChange={(event) => setForm({ ...form, title: event.target.value })}
@@ -122,6 +139,7 @@ export function TaskForm({
         <label className="primary-field" htmlFor="task-description">
           Description
           <textarea
+            disabled={disabled}
             id="task-description"
             maxLength={1000}
             onChange={(event) => setForm({ ...form, description: event.target.value })}
@@ -133,61 +151,42 @@ export function TaskForm({
 
         <label htmlFor="task-category">
           Category
-          <span className="select-control">
-            <select
-              id="task-category"
-              onChange={(event) =>
-                setForm({ ...form, category: event.target.value })
-              }
-              value={form.category}
-            >
-              <option>Backend</option>
-              <option>Frontend</option>
-              <option>Database</option>
-              <option>Testing</option>
-            </select>
-            <ChevronDown aria-hidden="true" />
-          </span>
+          <SelectField
+            disabled={disabled}
+            id="task-category"
+            onValueChange={(category) => setForm({ ...form, category })}
+            options={categoryOptions}
+            value={form.category}
+          />
         </label>
 
         <label htmlFor="task-priority">
           Priority
-          <span className="select-control">
-            <select
-              id="task-priority"
-              onChange={(event) =>
-                setForm({ ...form, priority: event.target.value })
-              }
-              value={form.priority}
-            >
-              <option>Low</option>
-              <option>Medium</option>
-              <option>High</option>
-            </select>
-            <ChevronDown aria-hidden="true" />
-          </span>
+          <SelectField
+            disabled={disabled}
+            id="task-priority"
+            onValueChange={(priority) => setForm({ ...form, priority })}
+            options={priorityOptions}
+            value={form.priority ?? "Medium"}
+          />
         </label>
 
         <label htmlFor="task-status">
           Status
-          <span className="select-control">
-            <select
-              id="task-status"
-              onChange={(event) => updateStatus(event.target.value)}
-              value={form.status}
-            >
-              <option value="pending">Pending</option>
-              <option value="in-progress">In progress</option>
-              <option value="completed">Completed</option>
-            </select>
-            <ChevronDown aria-hidden="true" />
-          </span>
+          <SelectField
+            disabled={disabled}
+            id="task-status"
+            onValueChange={updateStatus}
+            options={statusOptions}
+            value={form.status}
+          />
         </label>
 
         <label htmlFor="task-due-date">
           Due date
           <input
             aria-describedby="task-due-date-hint"
+            disabled={disabled}
             id="task-due-date"
             min={minimumDueDate}
             onChange={(event) => setForm({ ...form, dueDate: event.target.value })}
@@ -203,6 +202,7 @@ export function TaskForm({
         <label className="checkbox-field">
           <input
             checked={form.isCompleted}
+            disabled={disabled}
             onChange={(event) =>
               setForm({
                 ...form,

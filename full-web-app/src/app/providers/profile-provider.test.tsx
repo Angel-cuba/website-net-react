@@ -45,7 +45,6 @@ describe('ProfileProvider', () => {
       profileError: '',
     })
     expect(userApiMock.getUserProfile).not.toHaveBeenCalled()
-    await expect(result.current.refreshProfile()).resolves.toBeUndefined()
   })
 
   it('loads and normalizes the authenticated user profile', async () => {
@@ -115,26 +114,12 @@ describe('ProfileProvider', () => {
     expect(result.current.profile?.firstName).toBe('Current user')
   })
 
-  it('refreshes and locally replaces the current profile', async () => {
+  it('locally replaces the current profile', async () => {
     authenticate('9')
     userApiMock.getUserProfile.mockResolvedValueOnce(apiResponse(createProfile()))
     const { result } = renderProfile()
 
     await waitFor(() => expect(result.current.profile).not.toBeNull())
-
-    const refreshRequest = createDeferred<ReturnType<typeof apiResponse>>()
-    userApiMock.getUserProfile.mockReturnValueOnce(refreshRequest.promise)
-    let refreshPromise!: Promise<void>
-    act(() => {
-      refreshPromise = result.current.refreshProfile()
-    })
-    expect(result.current.isProfileLoading).toBe(true)
-
-    await act(async () => {
-      refreshRequest.resolve(apiResponse(createProfile({ bio: 'Refreshed bio' })))
-      await refreshPromise
-    })
-    expect(result.current.profile?.bio).toBe('Refreshed bio')
 
     act(() => {
       result.current.replaceProfile({

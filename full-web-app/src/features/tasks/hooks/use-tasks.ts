@@ -70,18 +70,6 @@ export function useTasks() {
     return () => window.clearTimeout(timer);
   }, [message]);
 
-  async function refreshTasks() {
-    if (!isAuthenticated) {
-      return;
-    }
-
-    await runTaskAction(async () => {
-      const nextTasks = await getTasks();
-      setTasks(nextTasks);
-      setMessage(`Loaded ${nextTasks.length} task${nextTasks.length === 1 ? "" : "s"}.`);
-    });
-  }
-
   async function createTask(payload: TaskPayload): Promise<boolean> {
     if (!isAuthenticated) {
       setError("Login is required before creating tasks.");
@@ -175,7 +163,6 @@ export function useTasks() {
     message,
     error,
     isLoading,
-    refreshTasks,
     createTask,
     saveTask,
     toggleTask,

@@ -65,6 +65,7 @@ export function TaskCard({
   return (
     <article
       className={`task-card ${task.isCompleted ? "is-completed" : ""} ${isOverdue ? "is-overdue" : ""}`}
+      data-category={normalizeCategory(task.category)}
     >
       <div className="task-card__check">
         <label title={task.isCompleted ? "Mark as pending" : "Mark as completed"}>
@@ -137,4 +138,8 @@ function formatStatus(status: string): string {
     .split("-")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function normalizeCategory(category: string | null): string {
+  return (category || "uncategorized").trim().toLowerCase();
 }

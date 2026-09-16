@@ -16,7 +16,6 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   const userId = user?.id;
   const [profile, setProfile] = useState<IUserProfile | null>(null);
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
-  const [isRefreshingProfile, setIsRefreshingProfile] = useState(false);
   const [profileError, setProfileError] = useState("");
   const requestVersion = useRef(0);
 
@@ -48,49 +47,11 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
         }
 
         setProfileError(getErrorMessage(caughtError));
-      })
-      .finally(() => {
-        if (currentRequest === requestVersion.current) {
-          setIsRefreshingProfile(false);
-        }
       });
 
     return () => {
       requestVersion.current += 1;
     };
-  }, [expireSession, isAuthenticated, userId]);
-
-  const refreshProfile = useCallback(async () => {
-    if (!isAuthenticated || !userId) return;
-
-    const currentRequest = ++requestVersion.current;
-    setIsRefreshingProfile(true);
-
-    try {
-      const nextProfile = await requestUserProfile();
-
-      if (currentRequest !== requestVersion.current) return;
-
-      setProfile(nextProfile);
-      setLoadedUserId(userId);
-      setProfileError("");
-    } catch (caughtError) {
-      if (currentRequest !== requestVersion.current) return;
-
-      setProfile(null);
-      setLoadedUserId(userId);
-
-      if (caughtError instanceof ApiError && caughtError.status === 401) {
-        expireSession();
-        return;
-      }
-
-      setProfileError(getErrorMessage(caughtError));
-    } finally {
-      if (currentRequest === requestVersion.current) {
-        setIsRefreshingProfile(false);
-      }
-    }
   }, [expireSession, isAuthenticated, userId]);
 
   const replaceProfile = useCallback(
@@ -105,23 +66,19 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   const hasCurrentProfile = Boolean(userId && loadedUserId === userId);
   const currentProfile = isAuthenticated && hasCurrentProfile ? profile : null;
   const currentProfileError = isAuthenticated && hasCurrentProfile ? profileError : "";
-  const isProfileLoading = Boolean(
-    isAuthenticated && userId && (!hasCurrentProfile || isRefreshingProfile),
-  );
+  const isProfileLoading = Boolean(isAuthenticated && userId && !hasCurrentProfile);
 
   const value = useMemo(
     () => ({
       profile: currentProfile,
       isProfileLoading,
       profileError: currentProfileError,
-      refreshProfile,
       replaceProfile,
     }),
     [
       currentProfile,
       currentProfileError,
       isProfileLoading,
-      refreshProfile,
       replaceProfile,
     ],
   );

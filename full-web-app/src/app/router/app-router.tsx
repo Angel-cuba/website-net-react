@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { LockKeyhole } from "lucide-react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  ListChecks,
+  LockKeyhole,
+} from "lucide-react";
 import { EmptyState } from "../../components/empty-state";
 import { useAuth } from "../../features/auth";
 import { InvitationsPanel } from "../../features/invitations/components/invitations-panel";
@@ -39,16 +45,29 @@ export function AppRouter() {
     <AppShell activePath={activePath} onNavigate={navigate}>
       {!isAuthenticated ? (
         <div className="guest-workspace">
-          <div aria-hidden="true" className="guest-motion">
-            <span className="guest-motion__lane guest-motion__lane--one">
-              <span />
-            </span>
-            <span className="guest-motion__lane guest-motion__lane--two">
-              <span />
-            </span>
-            <span className="guest-motion__lane guest-motion__lane--three">
-              <span />
-            </span>
+          <div aria-hidden="true" className="guest-preview">
+            <div className="guest-preview__summary">
+              <span className="guest-preview__metric guest-preview__metric--today">
+                <Clock3 />
+                <strong>Today</strong>
+                <b>3</b>
+              </span>
+              <span className="guest-preview__metric guest-preview__metric--scheduled">
+                <CalendarDays />
+                <strong>Scheduled</strong>
+                <b>5</b>
+              </span>
+              <span className="guest-preview__metric guest-preview__metric--all">
+                <ListChecks />
+                <strong>All tasks</strong>
+                <b>8</b>
+              </span>
+            </div>
+            <div className="guest-preview__tasks">
+              <span><i />Plan the next release</span>
+              <span><i />Review workspace access</span>
+              <span className="is-complete"><CheckCircle2 />Update profile</span>
+            </div>
           </div>
           <EmptyState
             description="Sign in to open your private workspace."

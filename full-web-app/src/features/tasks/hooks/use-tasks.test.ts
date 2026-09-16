@@ -132,22 +132,6 @@ describe('useTasks', () => {
     expect(result.current.message).toBe('Task deleted.')
   })
 
-  it('refreshes tasks and reports the loaded count', async () => {
-    authMock.current = { isAuthenticated: true }
-    tasksApiMock.getTasks
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([createTask(), createTask({ id: 2 })])
-    const { result } = renderHook(() => useTasks())
-
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-    await act(async () => {
-      await result.current.refreshTasks()
-    })
-
-    expect(result.current.tasks).toHaveLength(2)
-    expect(result.current.message).toBe('Loaded 2 tasks.')
-  })
-
   it('surfaces action failures and restores the loading state', async () => {
     authMock.current = { isAuthenticated: true }
     tasksApiMock.getTasks.mockResolvedValue([])

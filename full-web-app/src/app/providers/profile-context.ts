@@ -5,7 +5,6 @@ export type ProfileContextValue = {
   profile: IUserProfile | null;
   isProfileLoading: boolean;
   profileError: string;
-  refreshProfile: () => Promise<void>;
   replaceProfile: (profile: IUserProfile) => void;
 };
 

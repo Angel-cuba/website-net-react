@@ -10,7 +10,6 @@ export type InvitationsContextValue = {
   respondingInvitationId: number | null;
   message: string;
   error: string;
-  refreshInvitations: () => Promise<boolean>;
   respond: (
     invitationId: number,
     decision: InvitationDecision,

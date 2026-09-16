@@ -62,7 +62,6 @@ describe('InvitationsProvider', () => {
     })
     expect(invitationsApiMock.getReceivedInvitations).not.toHaveBeenCalled()
 
-    await expect(result.current.refreshInvitations()).resolves.toBe(false)
     await expect(result.current.respond(1, 'accepted')).resolves.toBe(false)
     expect(invitationsApiMock.respondToInvitation).not.toHaveBeenCalled()
   })

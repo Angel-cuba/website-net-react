@@ -49,6 +49,7 @@ export function OwnedSharedTaskCard({ onManageAccess, task }: OwnedSharedTaskCar
   return (
     <article
       className={`shared-task-card owned-shared-task-card ${task.isCompleted ? "is-completed" : ""} ${isOverdue ? "is-overdue" : ""}`}
+      data-category={normalizeCategory(task.category)}
     >
       <div className="shared-task-card__heading">
         <div>
@@ -105,4 +106,8 @@ function formatAccessCount(count: number): string {
 function formatPendingCount(count: number): string {
   if (count === 0) return "No pending invites";
   return `${count} pending ${count === 1 ? "invite" : "invites"}`;
+}
+
+function normalizeCategory(category: string | null): string {
+  return (category || "uncategorized").trim().toLowerCase();
 }
