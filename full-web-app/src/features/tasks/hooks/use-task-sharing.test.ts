@@ -62,7 +62,6 @@ describe('useTaskSharing', () => {
     })
     expect(taskSharingApiMock.getTaskSharing).not.toHaveBeenCalled()
 
-    await expect(result.current.refreshTaskSharing()).resolves.toBe(false)
     await expect(result.current.inviteUser('member@example.com')).resolves.toBe(false)
     expect(invitationsApiMock.createInvitation).not.toHaveBeenCalled()
   })

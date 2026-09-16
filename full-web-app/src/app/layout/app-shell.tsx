@@ -194,6 +194,29 @@ export function AppShell({ activePath, children, onNavigate }: AppShellProps) {
       )}
 
       <main id="main-content">{children}</main>
+
+      {isAuthenticated && !isMenuOpen && (
+        <nav aria-label="Mobile navigation" className="mobile-bottom-nav">
+          {navigationItems.map(({ icon: Icon, label, path }) => (
+            <a
+              aria-current={activePath === path ? "page" : undefined}
+              href={path}
+              key={path}
+              onClick={(event) => handleNavigation(event, path)}
+            >
+              <span className="mobile-bottom-nav__icon">
+                <Icon aria-hidden="true" />
+                {path === "/invitations" && pendingInvitationCount > 0 && (
+                  <span aria-hidden="true" className="mobile-bottom-nav__badge">
+                    {pendingInvitationCount > 9 ? "9+" : pendingInvitationCount}
+                  </span>
+                )}
+              </span>
+              <span>{label === "Shared tasks" ? "Shared" : label}</span>
+            </a>
+          ))}
+        </nav>
+      )}
     </div>
   );
 }

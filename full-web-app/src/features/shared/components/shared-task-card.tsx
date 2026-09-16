@@ -57,6 +57,7 @@ export function SharedTaskCard({
   return (
     <article
       className={`shared-task-card ${task.isCompleted ? "is-completed" : ""} ${isOverdue ? "is-overdue" : ""}`}
+      data-category={normalizeCategory(task.category)}
     >
       <div className="shared-task-card__heading">
         <div className="shared-task-card__title-row">
@@ -142,4 +143,8 @@ function formatActivityDate(value: string): string {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);
+}
+
+function normalizeCategory(category: string | null): string {
+  return (category || "uncategorized").trim().toLowerCase();
 }

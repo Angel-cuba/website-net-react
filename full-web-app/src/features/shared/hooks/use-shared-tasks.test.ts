@@ -61,7 +61,6 @@ describe('useSharedTasks', () => {
     })
     expect(sharedTasksApiMock.getSharedTasks).not.toHaveBeenCalled()
 
-    await expect(result.current.refreshSharedTasks()).resolves.toBe(false)
     await expect(result.current.saveSharedTask(1001, createPayload())).resolves.toBe(false)
     expect(tasksApiMock.updateTask).not.toHaveBeenCalled()
   })

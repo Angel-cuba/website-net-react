@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { Button } from "../../../components/button";
 import { useSharedTasks } from "../../shared/hooks/use-shared-tasks";
 import { useTasks } from "../hooks/use-tasks";
@@ -13,6 +13,7 @@ type EditingTaskTarget = {
 };
 
 export function TaskPanel() {
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [editingTaskTarget, setEditingTaskTarget] =
     useState<EditingTaskTarget | null>(null);
   const [sharingTaskId, setSharingTaskId] = useState<number | null>(null);
@@ -21,7 +22,6 @@ export function TaskPanel() {
     message,
     error,
     isLoading,
-    refreshTasks,
     createTask,
     saveTask,
     toggleTask,
@@ -32,7 +32,6 @@ export function TaskPanel() {
     isLoading: isLoadingSharedTasks,
     message: sharedTasksMessage,
     error: sharedTasksError,
-    refreshSharedTasks,
     saveSharedTask,
     toggleSharedTask,
   } = useSharedTasks();
@@ -51,10 +50,6 @@ export function TaskPanel() {
   const isWorkspaceLoading = isLoading || isLoadingSharedTasks;
   const workspaceTaskCount = tasks.length + sharedWithYou.length;
 
-  async function refreshWorkspaceTasks() {
-    await Promise.all([refreshTasks(), refreshSharedTasks()]);
-  }
-
   async function updateEditingTask(payload: Parameters<typeof saveTask>[1]) {
     if (!editingTaskTarget) return false;
 
@@ -63,6 +58,22 @@ export function TaskPanel() {
       : await saveTask(editingTaskTarget.id, payload);
     if (succeeded) setEditingTaskTarget(null);
     return succeeded;
+  }
+
+  async function createWorkspaceTask(payload: Parameters<typeof createTask>[0]) {
+    const succeeded = await createTask(payload);
+    if (succeeded) setIsComposerOpen(false);
+    return succeeded;
+  }
+
+  function toggleComposer() {
+    if (editingTaskTarget) {
+      setEditingTaskTarget(null);
+      setIsComposerOpen(true);
+      return;
+    }
+
+    setIsComposerOpen((isOpen) => !isOpen);
   }
 
   async function deleteTask(taskId: number) {
@@ -87,30 +98,33 @@ export function TaskPanel() {
         </div>
         <div className="task-toolbar">
           <Button
-            disabled={isWorkspaceLoading}
-            onClick={() => void refreshWorkspaceTasks()}
+            onClick={toggleComposer}
             type="button"
+            variant="primary"
           >
-            <RefreshCw
-              aria-hidden="true"
-              className={isWorkspaceLoading ? "is-spinning" : ""}
-            />
-            Refresh
+            {isComposerOpen && !editingTask ? (
+              <X aria-hidden="true" />
+            ) : (
+              <Plus aria-hidden="true" />
+            )}
+            {isComposerOpen && !editingTask ? "Close" : "New task"}
           </Button>
         </div>
       </div>
 
-      <TaskForm
-        disabled={isWorkspaceLoading}
-        editingTask={editingTask}
-        isEditingSharedTask={editingTaskTarget?.source === "shared"}
-        key={editingTask
-          ? `${editingTaskTarget?.source}:${editingTask.id}:${editingTask.updatedAt}:${editingTask.isCompleted}`
-          : "new"}
-        onCancelEdit={() => setEditingTaskTarget(null)}
-        onCreate={createTask}
-        onUpdate={updateEditingTask}
-      />
+      {(isComposerOpen || editingTask) && (
+        <TaskForm
+          disabled={isWorkspaceLoading}
+          editingTask={editingTask}
+          isEditingSharedTask={editingTaskTarget?.source === "shared"}
+          key={editingTask
+            ? `${editingTaskTarget?.source}:${editingTask.id}:${editingTask.updatedAt}:${editingTask.isCompleted}`
+            : "new"}
+          onCancelEdit={() => setEditingTaskTarget(null)}
+          onCreate={createWorkspaceTask}
+          onUpdate={updateEditingTask}
+        />
+      )}
 
       <div aria-atomic="true" aria-live="polite" className="task-feedback">
         {message && <p className="notice is-success">{message}</p>}

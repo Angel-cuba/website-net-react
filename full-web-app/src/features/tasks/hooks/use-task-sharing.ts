@@ -21,7 +21,6 @@ export function useTaskSharing(taskId: number | null) {
   const [sharing, setSharing] = useState<TaskSharing | null>(null);
   const [loadedTaskId, setLoadedTaskId] = useState<number | null>(null);
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -89,25 +88,6 @@ export function useTaskSharing(taskId: number | null) {
     const timer = window.setTimeout(() => setMessage(""), 3_000);
     return () => window.clearTimeout(timer);
   }, [message]);
-
-  async function refreshTaskSharing(): Promise<boolean> {
-    if (!isAuthenticated || !userId || taskId === null) return false;
-
-    setError("");
-    setIsRefreshing(true);
-
-    try {
-      setSharing(await loadTaskSharing(taskId));
-      setLoadedTaskId(taskId);
-      setLoadedUserId(userId);
-      return true;
-    } catch (caughtError) {
-      handleRequestError(caughtError);
-      return false;
-    } finally {
-      setIsRefreshing(false);
-    }
-  }
 
   async function inviteUser(invitedEmail: string): Promise<boolean> {
     if (!isAuthenticated || taskId === null) return false;
@@ -204,7 +184,7 @@ export function useTaskSharing(taskId: number | null) {
     isAuthenticated &&
       userId &&
       taskId !== null &&
-      (!hasCurrentSharing || isRefreshing),
+      !hasCurrentSharing,
   );
 
   return {
@@ -213,7 +193,6 @@ export function useTaskSharing(taskId: number | null) {
     isSubmitting,
     message,
     error: currentError,
-    refreshTaskSharing,
     inviteUser,
     cancelPendingInvitation,
     revokeAccess,

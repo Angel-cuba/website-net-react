@@ -24,7 +24,6 @@ export function InvitationsProvider({ children }: InvitationsProviderProps) {
   const { invitationsRevision } = useRealtime();
   const [invitations, setInvitations] = useState<InvitationItem[]>([]);
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [respondingInvitationId, setRespondingInvitationId] = useState<number | null>(
     null,
   );
@@ -92,24 +91,6 @@ export function InvitationsProvider({ children }: InvitationsProviderProps) {
     return () => window.clearTimeout(timer);
   }, [message]);
 
-  const refreshInvitations = useCallback(async (): Promise<boolean> => {
-    if (!isAuthenticated || !userId) return false;
-
-    setError("");
-    setIsRefreshing(true);
-
-    try {
-      setInvitations(await loadInvitations());
-      setLoadedUserId(userId);
-      return true;
-    } catch (caughtError) {
-      handleRequestError(caughtError);
-      return false;
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [handleRequestError, isAuthenticated, loadInvitations, userId]);
-
   const respond = useCallback(async (
     invitationId: number,
     decision: InvitationDecision,
@@ -151,9 +132,7 @@ export function InvitationsProvider({ children }: InvitationsProviderProps) {
     [hasCurrentInvitations, invitations, isAuthenticated],
   );
   const currentError = isAuthenticated && hasCurrentInvitations ? error : "";
-  const isLoading = Boolean(
-    isAuthenticated && userId && (!hasCurrentInvitations || isRefreshing),
-  );
+  const isLoading = Boolean(isAuthenticated && userId && !hasCurrentInvitations);
   const value = useMemo(
     () => ({
       invitations: currentInvitations,
@@ -161,7 +140,6 @@ export function InvitationsProvider({ children }: InvitationsProviderProps) {
       respondingInvitationId,
       message,
       error: currentError,
-      refreshInvitations,
       respond,
     }),
     [
@@ -169,7 +147,6 @@ export function InvitationsProvider({ children }: InvitationsProviderProps) {
       currentInvitations,
       isLoading,
       message,
-      refreshInvitations,
       respond,
       respondingInvitationId,
     ],

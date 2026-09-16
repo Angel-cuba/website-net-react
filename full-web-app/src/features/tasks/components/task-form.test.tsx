@@ -14,9 +14,9 @@ describe('TaskForm', () => {
 
     await user.type(screen.getByLabelText('Title'), 'Regression coverage')
     await user.type(screen.getByLabelText('Description'), 'Protect the task flow')
-    await user.selectOptions(screen.getByLabelText('Category'), 'Testing')
-    await user.selectOptions(screen.getByLabelText('Priority'), 'High')
-    await user.selectOptions(screen.getByLabelText('Status'), 'in-progress')
+    await chooseOption(user, 'Category', 'Testing')
+    await chooseOption(user, 'Priority', 'High')
+    await chooseOption(user, 'Status', 'In progress')
     fireEvent.change(screen.getByLabelText(/^Due date/), {
       target: { value: '2026-09-20T14:30' },
     })
@@ -33,9 +33,9 @@ describe('TaskForm', () => {
       status: 'in-progress',
     })
     await waitFor(() => expect(screen.getByLabelText('Title')).toHaveValue(''))
-    expect(screen.getByLabelText('Category')).toHaveValue('Backend')
-    expect(screen.getByLabelText('Priority')).toHaveValue('Medium')
-    expect(screen.getByLabelText('Status')).toHaveValue('pending')
+    expect(screen.getByLabelText('Category')).toHaveTextContent('Backend')
+    expect(screen.getByLabelText('Priority')).toHaveTextContent('Medium')
+    expect(screen.getByLabelText('Status')).toHaveTextContent('Pending')
   })
 
   it('keeps the entered values when creation fails', async () => {
@@ -93,16 +93,16 @@ describe('TaskForm', () => {
     const status = screen.getByLabelText('Status')
     const completed = screen.getByRole('checkbox', { name: 'Completed' })
 
-    await user.selectOptions(status, 'completed')
+    await chooseOption(user, 'Status', 'Completed')
     expect(completed).toBeChecked()
 
     await user.click(completed)
     expect(completed).not.toBeChecked()
-    expect(status).toHaveValue('pending')
+    expect(status).toHaveTextContent('Pending')
 
     await user.click(completed)
     expect(completed).toBeChecked()
-    expect(status).toHaveValue('completed')
+    expect(status).toHaveTextContent('Completed')
   })
 
   it('exposes the five-hour minimum and saving state through the form controls', () => {
@@ -135,6 +135,15 @@ function renderTaskForm(overrides: TaskFormOverrides = {}) {
   }
 
   return render(<TaskForm {...props} />)
+}
+
+async function chooseOption(
+  user: ReturnType<typeof userEvent.setup>,
+  label: string,
+  option: string,
+) {
+  await user.click(screen.getByRole('combobox', { name: label }))
+  await user.click(await screen.findByRole('option', { name: option }))
 }
 
 function createTask(overrides: Partial<TaskItem> = {}): TaskItem {

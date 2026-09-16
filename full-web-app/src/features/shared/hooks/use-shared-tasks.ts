@@ -16,7 +16,6 @@ export function useSharedTasks() {
   const [sharedWithYou, setSharedWithYou] = useState<SharedTaskItem[]>([]);
   const [sharedByYou, setSharedByYou] = useState<OwnedSharedTaskItem[]>([]);
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -90,26 +89,6 @@ export function useSharedTasks() {
     const timer = window.setTimeout(() => setMessage(""), 3_000);
     return () => window.clearTimeout(timer);
   }, [message]);
-
-  async function refreshSharedTasks(): Promise<boolean> {
-    if (!isAuthenticated || !userId) return false;
-
-    setError("");
-    setIsRefreshing(true);
-
-    try {
-      const nextTasks = await loadSharedTasks();
-      setSharedWithYou(nextTasks.sharedWithYou);
-      setSharedByYou(nextTasks.sharedByYou);
-      setLoadedUserId(userId);
-      return true;
-    } catch (caughtError) {
-      handleRequestError(caughtError);
-      return false;
-    } finally {
-      setIsRefreshing(false);
-    }
-  }
 
   async function saveSharedTask(
     taskId: number,
@@ -191,7 +170,7 @@ export function useSharedTasks() {
   const isLoading = Boolean(
     isAuthenticated &&
       userId &&
-      (!hasCurrentSharedTasks || isRefreshing || isSubmitting),
+      (!hasCurrentSharedTasks || isSubmitting),
   );
 
   return {
@@ -200,7 +179,6 @@ export function useSharedTasks() {
     isLoading,
     message,
     error: currentError,
-    refreshSharedTasks,
     saveSharedTask,
     toggleSharedTask,
   };

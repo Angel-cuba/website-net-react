@@ -1,5 +1,4 @@
-import { Inbox, RefreshCw } from "lucide-react";
-import { Button } from "../../../components/button";
+import { Inbox } from "lucide-react";
 import { EmptyState } from "../../../components/empty-state";
 import { useInvitations } from "../hooks/use-invitations";
 import { InvitationCard } from "./invitation-card";
@@ -11,7 +10,6 @@ export function InvitationsPanel() {
     respondingInvitationId,
     message,
     error,
-    refreshInvitations,
     respond,
   } = useInvitations();
   const pendingInvitations = invitations.filter(
@@ -28,14 +26,6 @@ export function InvitationsPanel() {
           <p className="eyebrow">Workspace</p>
           <h1 id="invitations-heading">Invitations</h1>
         </div>
-        <Button
-          disabled={isLoading || respondingInvitationId !== null}
-          onClick={() => void refreshInvitations()}
-          type="button"
-        >
-          <RefreshCw aria-hidden="true" className={isLoading ? "is-spinning" : ""} />
-          Refresh
-        </Button>
       </div>
 
       <div aria-atomic="true" aria-live="polite" className="invitations-feedback">
