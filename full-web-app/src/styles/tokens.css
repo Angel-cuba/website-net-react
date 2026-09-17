@@ -1,12 +1,13 @@
 :root {
-  --color-canvas: #f3f5f0;
+  /* Neutral chrome (cool-neutral grays) with green + lime kept as the signature accent. */
+  --color-canvas: #f6f7f6;
   --color-surface: #ffffff;
-  --color-surface-muted: #f7f8f4;
-  --color-surface-strong: #edf1ea;
-  --color-border: #d9dfd7;
-  --color-border-strong: #abb8ae;
-  --color-text: #172019;
-  --color-text-muted: #617067;
+  --color-surface-muted: #f4f5f4;
+  --color-surface-strong: #ececeb;
+  --color-border: #e5e6e3;
+  --color-border-strong: #c6c8c3;
+  --color-text: #16181a;
+  --color-text-muted: #676c6e;
   --color-primary: #1f6a49;
   --color-primary-hover: #18543b;
   --color-primary-soft: #e4f2e9;
@@ -21,16 +22,16 @@
   --color-warning-soft: #fff3dc;
   --color-info: #315faa;
   --color-info-soft: #edf2ff;
-  --color-category-backend: #c8d4ff;
-  --color-category-frontend: #f3c7e9;
-  --color-category-database: #c5eadf;
-  --color-category-testing: #f5eb82;
-  --color-category-default: #dbe1dc;
-  --shadow-subtle: 0 1px 2px rgb(23 32 25 / 5%), 0 6px 18px rgb(23 32 25 / 5%);
-  --shadow-raised: 0 12px 30px rgb(23 32 25 / 10%);
-  --shadow-floating: 0 24px 64px rgb(23 32 25 / 20%);
-  --radius-sm: 5px;
-  --radius-md: 8px;
+  --color-category-backend: #cdd6f5;
+  --color-category-frontend: #eecbe4;
+  --color-category-database: #c7e7dd;
+  --color-category-testing: #ece2a4;
+  --color-category-default: #dcdedb;
+  --shadow-subtle: 0 1px 2px rgb(18 22 24 / 5%), 0 6px 18px rgb(18 22 24 / 4%);
+  --shadow-raised: 0 12px 30px rgb(18 22 24 / 9%);
+  --shadow-floating: 0 24px 64px rgb(18 22 24 / 18%);
+  --radius-sm: 6px;
+  --radius-md: 10px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;

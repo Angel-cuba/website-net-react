@@ -204,7 +204,7 @@ textarea:focus,
   height: 38px;
   border: 1px solid rgb(255 255 255 / 30%);
   background: var(--color-primary);
-  box-shadow: 4px 4px 0 var(--color-accent);
+  box-shadow: 0 4px 12px rgb(31 106 73 / 24%);
 }
 
 .sidebar-brand strong {
@@ -289,9 +289,11 @@ textarea:focus,
 }
 
 .guest-workspace {
-  grid-template-columns: minmax(360px, 1.1fr) minmax(280px, 0.7fr);
-  gap: clamp(32px, 7vw, 96px);
-  padding: clamp(32px, 7vw, 96px);
+  grid-template-columns: minmax(0, 520px);
+  justify-content: center;
+  align-content: center;
+  gap: clamp(24px, 4vw, 44px);
+  padding: clamp(32px, 6vw, 72px);
   background: var(--color-surface-muted);
 }
 
@@ -386,7 +388,7 @@ textarea:focus,
 }
 
 .guest-workspace > .empty-state {
-  min-height: 240px;
+  min-height: 0;
   border: 0;
   background: transparent;
   box-shadow: none;
@@ -557,7 +559,7 @@ textarea:focus,
 .task-card.is-completed,
 .shared-task-card.is-completed {
   border-inline-start-color: var(--color-primary);
-  background: #fafbf8;
+  background: var(--color-surface-muted);
 }
 
 .task-card__check input,
@@ -721,7 +723,7 @@ textarea:focus,
   outline: 1px solid var(--color-border);
   background: var(--color-accent-soft);
   color: var(--color-primary);
-  box-shadow: 8px 8px 0 var(--color-accent-soft);
+  box-shadow: var(--shadow-raised);
 }
 
 .user-card__heading h2 {
@@ -776,13 +778,35 @@ textarea:focus,
   }
 }
 
-@media (max-width: 900px) {
+/* Guest view collapses to a stacked, full-width login before the two-pane
+   composition would get cramped on laptop widths. */
+@media (max-width: 1024px) {
+  .is-guest .sidebar {
+    position: static;
+    width: 100%;
+    min-height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .is-guest main {
+    min-height: auto;
+    margin-left: 0;
+  }
+
+  .is-guest .auth-panel {
+    width: min(100%, 460px);
+    margin: 0 auto;
+  }
+
   .guest-workspace {
     grid-template-columns: minmax(0, 1fr);
+    min-height: 200px;
     padding: var(--space-8) var(--space-5);
   }
 
-  .guest-preview {
+  .guest-preview,
+  .guest-motion {
     display: none;
   }
 }
