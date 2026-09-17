@@ -472,8 +472,14 @@ La migracion versionada
 - constraint de integridad del destinatario;
 - transaccion con `XACT_ABORT ON` y rollback ante error.
 
-`database/baseline.sql` crea primero las tablas base. La migracion de sharing se
-aplica despues y agrega estas restricciones e indices al esquema existente.
+La migracion
+`database/migrations/20260917_002_expand_task_title.sql` alinea el limite del
+titulo entre React, ASP.NET Core y SQL Server: cambia `Tasks.Title` a
+`nvarchar(150)`, comprueba que no haya datos incompatibles y registra su
+ejecucion de forma idempotente.
+
+`database/baseline.sql` crea primero las tablas base. Las migraciones se aplican
+despues, en orden, para actualizar un esquema existente.
 
 ## 15. Configuracion local
 
@@ -519,6 +525,7 @@ orden. Por ejemplo, con `sqlcmd` y autenticacion interactiva:
 ```bash
 sqlcmd -S localhost,1433 -d Wapp2DB -U sa -C -b -i database/baseline.sql
 sqlcmd -S localhost,1433 -d Wapp2DB -U sa -C -b -i database/migrations/20260910_001_task_sharing_constraints.sql
+sqlcmd -S localhost,1433 -d Wapp2DB -U sa -C -b -i database/migrations/20260917_002_expand_task_title.sql
 ```
 
 `baseline.sql` crea el esquema completo, los roles iniciales y
