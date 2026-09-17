@@ -14,7 +14,9 @@ export function SharedTasksPanel() {
   const [activeSection, setActiveSection] = useState<"with-you" | "by-you">(
     "with-you",
   );
-  const [managedTask, setManagedTask] = useState<OwnedSharedTaskItem | null>(null);
+  const [managedTask, setManagedTask] = useState<OwnedSharedTaskItem | null>(
+    null,
+  );
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
   const {
     sharedWithYou,
@@ -40,10 +42,13 @@ export function SharedTasksPanel() {
   }
 
   return (
-    <section aria-labelledby="shared-heading" className="feature-view shared-panel">
+    <section
+      aria-labelledby="shared-heading"
+      className="feature-view shared-panel"
+    >
       <div className="view-heading">
         <div>
-          <p className="eyebrow">Workspace</p>
+          <p className="eyebrow">Collaborative Task Workspace</p>
           <h1 id="shared-heading">Shared tasks</h1>
         </div>
       </div>
@@ -61,12 +66,22 @@ export function SharedTasksPanel() {
 
       <div aria-atomic="true" aria-live="polite" className="shared-feedback">
         {message && <p className="notice is-success">{message}</p>}
-        {error && <p className="notice is-error" role="alert">{error}</p>}
+        {error && (
+          <p className="notice is-error" role="alert">
+            {error}
+          </p>
+        )}
       </div>
 
       {isLoading && !hasSharedTasks ? (
-        <div aria-label="Loading shared tasks" className="shared-task-list" role="status">
-          {[0, 1].map((item) => <div className="shared-task-skeleton" key={item} />)}
+        <div
+          aria-label="Loading shared tasks"
+          className="shared-task-list"
+          role="status"
+        >
+          {[0, 1].map((item) => (
+            <div className="shared-task-skeleton" key={item} />
+          ))}
         </div>
       ) : !hasSharedTasks ? (
         <EmptyState
@@ -167,7 +182,10 @@ export function SharedTasksPanel() {
       )}
 
       {managedTask && (
-        <TaskSharingDialog onClose={() => setManagedTask(null)} task={managedTask} />
+        <TaskSharingDialog
+          onClose={() => setManagedTask(null)}
+          task={managedTask}
+        />
       )}
     </section>
   );

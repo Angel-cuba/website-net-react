@@ -20,7 +20,10 @@ export function InvitationsPanel() {
   );
 
   return (
-    <section aria-labelledby="invitations-heading" className="feature-view invitations-panel">
+    <section
+      aria-labelledby="invitations-heading"
+      className="feature-view invitations-panel"
+    >
       <div className="view-heading">
         <div>
           <p className="eyebrow">Workspace</p>
@@ -28,14 +31,28 @@ export function InvitationsPanel() {
         </div>
       </div>
 
-      <div aria-atomic="true" aria-live="polite" className="invitations-feedback">
+      <div
+        aria-atomic="true"
+        aria-live="polite"
+        className="invitations-feedback"
+      >
         {message && <p className="notice is-success">{message}</p>}
-        {error && <p className="notice is-error" role="alert">{error}</p>}
+        {error && (
+          <p className="notice is-error" role="alert">
+            {error}
+          </p>
+        )}
       </div>
 
       {isLoading && invitations.length === 0 ? (
-        <div aria-label="Loading invitations" className="invitation-list" role="status">
-          {[0, 1].map((item) => <div className="invitation-skeleton" key={item} />)}
+        <div
+          aria-label="Loading invitations"
+          className="invitation-list"
+          role="status"
+        >
+          {[0, 1].map((item) => (
+            <div className="invitation-skeleton" key={item} />
+          ))}
         </div>
       ) : invitations.length === 0 ? (
         <EmptyState
@@ -67,7 +84,9 @@ export function InvitationsPanel() {
                 ))}
               </div>
             ) : (
-              <p className="invitation-section-empty">Nothing needs your attention.</p>
+              <p className="invitation-section-empty">
+                Nothing needs your attention.
+              </p>
             )}
           </section>
 

@@ -35,17 +35,20 @@ export function TaskPanel() {
     saveSharedTask,
     toggleSharedTask,
   } = useSharedTasks();
-  const editingOwnedTask = editingTaskTarget?.source === "owned"
-    ? tasks.find((task) => task.id === editingTaskTarget.id) ?? null
-    : null;
-  const editingSharedTask = editingTaskTarget?.source === "shared"
-    ? sharedWithYou.find((task) => task.id === editingTaskTarget.id) ?? null
-    : null;
-  const editingTask = editingTaskTarget?.source === "shared"
-    ? editingSharedTask?.canEdit
-      ? editingSharedTask
-      : null
-    : editingOwnedTask;
+  const editingOwnedTask =
+    editingTaskTarget?.source === "owned"
+      ? (tasks.find((task) => task.id === editingTaskTarget.id) ?? null)
+      : null;
+  const editingSharedTask =
+    editingTaskTarget?.source === "shared"
+      ? (sharedWithYou.find((task) => task.id === editingTaskTarget.id) ?? null)
+      : null;
+  const editingTask =
+    editingTaskTarget?.source === "shared"
+      ? editingSharedTask?.canEdit
+        ? editingSharedTask
+        : null
+      : editingOwnedTask;
   const sharingTask = tasks.find((task) => task.id === sharingTaskId) ?? null;
   const isWorkspaceLoading = isLoading || isLoadingSharedTasks;
   const workspaceTaskCount = tasks.length + sharedWithYou.length;
@@ -53,14 +56,17 @@ export function TaskPanel() {
   async function updateEditingTask(payload: Parameters<typeof saveTask>[1]) {
     if (!editingTaskTarget) return false;
 
-    const succeeded = editingTaskTarget.source === "shared"
-      ? await saveSharedTask(editingTaskTarget.id, payload)
-      : await saveTask(editingTaskTarget.id, payload);
+    const succeeded =
+      editingTaskTarget.source === "shared"
+        ? await saveSharedTask(editingTaskTarget.id, payload)
+        : await saveTask(editingTaskTarget.id, payload);
     if (succeeded) setEditingTaskTarget(null);
     return succeeded;
   }
 
-  async function createWorkspaceTask(payload: Parameters<typeof createTask>[0]) {
+  async function createWorkspaceTask(
+    payload: Parameters<typeof createTask>[0],
+  ) {
     const succeeded = await createTask(payload);
     if (succeeded) setIsComposerOpen(false);
     return succeeded;
@@ -90,18 +96,18 @@ export function TaskPanel() {
   }
 
   return (
-    <section aria-labelledby="tasks-heading" className="feature-view task-panel">
+    <section
+      aria-labelledby="tasks-heading"
+      className="feature-view task-panel"
+    >
       <div className="view-heading">
         <div>
-          <p className="eyebrow">Workspace</p>
-          <h1 id="tasks-heading">Tasks</h1>
+          <h1 id="tasks-heading" className="view-title">
+            All your tasks in one place
+          </h1>
         </div>
         <div className="task-toolbar">
-          <Button
-            onClick={toggleComposer}
-            type="button"
-            variant="primary"
-          >
+          <Button onClick={toggleComposer} type="button" variant="primary">
             {isComposerOpen && !editingTask ? (
               <X aria-hidden="true" />
             ) : (
@@ -117,9 +123,11 @@ export function TaskPanel() {
           disabled={isWorkspaceLoading}
           editingTask={editingTask}
           isEditingSharedTask={editingTaskTarget?.source === "shared"}
-          key={editingTask
-            ? `${editingTaskTarget?.source}:${editingTask.id}:${editingTask.updatedAt}:${editingTask.isCompleted}`
-            : "new"}
+          key={
+            editingTask
+              ? `${editingTaskTarget?.source}:${editingTask.id}:${editingTask.updatedAt}:${editingTask.isCompleted}`
+              : "new"
+          }
           onCancelEdit={() => setEditingTaskTarget(null)}
           onCreate={createWorkspaceTask}
           onUpdate={updateEditingTask}
@@ -131,14 +139,20 @@ export function TaskPanel() {
         {sharedTasksMessage && (
           <p className="notice is-success">{sharedTasksMessage}</p>
         )}
-        {error && <p className="notice is-error" role="alert">{error}</p>}
+        {error && (
+          <p className="notice is-error" role="alert">
+            {error}
+          </p>
+        )}
         {sharedTasksError && (
-          <p className="notice is-error" role="alert">{sharedTasksError}</p>
+          <p className="notice is-error" role="alert">
+            {sharedTasksError}
+          </p>
         )}
       </div>
 
       <div className="subsection-heading task-list-heading">
-        <h2>Workspace tasks</h2>
+        <h2>Collaborative Task Workspace</h2>
         <span className="task-count">{workspaceTaskCount}</span>
       </div>
 
