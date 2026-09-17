@@ -3,7 +3,10 @@ import type { FormEvent } from "react";
 import { Plus, Save, X } from "lucide-react";
 import { Button } from "../../../components/button";
 import { SelectField } from "../../../components/select-field";
-import { getMinimumDueDateInputValue, toDateTimeInputValue } from "../../../utils/date";
+import {
+  getMinimumDueDateInputValue,
+  toDateTimeInputValue,
+} from "../../../utils/date";
 import type { TaskItem, TaskPayload } from "../types/task";
 
 const taskTitleMaxLength = 150;
@@ -119,7 +122,9 @@ export function TaskForm({
         }
       : createEmptyTaskForm(),
   );
-  const [minimumDueDate, setMinimumDueDate] = useState(getMinimumDueDateInputValue);
+  const [minimumDueDate, setMinimumDueDate] = useState(
+    getMinimumDueDateInputValue,
+  );
   const titleLimitState = getCharacterLimitState(
     form.title.length,
     taskTitleMaxLength,
@@ -290,7 +295,9 @@ export function TaskForm({
             disabled={disabled}
             id="task-due-date"
             min={minimumDueDate}
-            onChange={(event) => setForm({ ...form, dueDate: event.target.value })}
+            onChange={(event) =>
+              setForm({ ...form, dueDate: event.target.value })
+            }
             onFocus={() => setMinimumDueDate(getMinimumDueDateInputValue())}
             type="datetime-local"
             value={form.dueDate ?? ""}
@@ -318,7 +325,11 @@ export function TaskForm({
 
         <div className="form-actions">
           <Button disabled={disabled} type="submit" variant="primary">
-            {editingTask ? <Save aria-hidden="true" /> : <Plus aria-hidden="true" />}
+            {editingTask ? (
+              <Save aria-hidden="true" />
+            ) : (
+              <Plus aria-hidden="true" />
+            )}
             {disabled ? "Saving" : editingTask ? "Save changes" : "Create task"}
           </Button>
         </div>
