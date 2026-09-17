@@ -6,6 +6,52 @@ import { SelectField } from "../../../components/select-field";
 import { getMinimumDueDateInputValue, toDateTimeInputValue } from "../../../utils/date";
 import type { TaskItem, TaskPayload } from "../types/task";
 
+const taskTitleMaxLength = 150;
+const taskDescriptionMaxLength = 1000;
+
+type CharacterLimitState = "calm" | "attention" | "warning" | "limit";
+
+function getCharacterLimitState(
+  currentLength: number,
+  maxLength: number,
+): CharacterLimitState {
+  const usage = currentLength / maxLength;
+
+  if (currentLength >= maxLength) {
+    return "limit";
+  }
+  if (usage >= 0.8) {
+    return "warning";
+  }
+  if (usage >= 0.6) {
+    return "attention";
+  }
+  return "calm";
+}
+
+type CharacterCounterProps = {
+  currentLength: number;
+  id: string;
+  maxLength: number;
+  state: CharacterLimitState;
+};
+
+function CharacterCounter({
+  currentLength,
+  id,
+  maxLength,
+  state,
+}: CharacterCounterProps) {
+  return (
+    <span className="character-counter" id={id}>
+      {state === "limit" && <strong role="status">Limit reached</strong>}
+      <span>
+        {currentLength} / {maxLength}
+      </span>
+    </span>
+  );
+}
+
 type TaskFormItem = Pick<
   TaskItem,
   | "id"
@@ -74,6 +120,14 @@ export function TaskForm({
       : createEmptyTaskForm(),
   );
   const [minimumDueDate, setMinimumDueDate] = useState(getMinimumDueDateInputValue);
+  const titleLimitState = getCharacterLimitState(
+    form.title.length,
+    taskTitleMaxLength,
+  );
+  const descriptionLimitState = getCharacterLimitState(
+    form.description.length,
+    taskDescriptionMaxLength,
+  );
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -101,6 +155,17 @@ export function TaskForm({
     setForm({ ...form, status, isCompleted: status === "completed" });
   }
 
+  function updateLimitedText(
+    field: "title" | "description",
+    value: string,
+    maxLength: number,
+  ) {
+    setForm((currentForm) => ({
+      ...currentForm,
+      [field]: value.slice(0, maxLength),
+    }));
+  }
+
   return (
     <section aria-labelledby="task-form-heading" className="task-composer">
       <div className="subsection-heading">
@@ -123,26 +188,62 @@ export function TaskForm({
       </div>
 
       <form aria-busy={disabled} className="task-form" onSubmit={handleSubmit}>
-        <label className="primary-field" htmlFor="task-title">
-          Title
+        <label
+          className="character-field primary-field"
+          data-limit-state={titleLimitState}
+          htmlFor="task-title"
+        >
+          <span className="field-label-row">
+            <span>Title</span>
+            <CharacterCounter
+              currentLength={form.title.length}
+              id="task-title-character-count"
+              maxLength={taskTitleMaxLength}
+              state={titleLimitState}
+            />
+          </span>
           <input
+            aria-describedby="task-title-character-count"
+            aria-label="Title"
             disabled={disabled}
             id="task-title"
-            maxLength={150}
-            onChange={(event) => setForm({ ...form, title: event.target.value })}
+            maxLength={taskTitleMaxLength}
+            onChange={(event) =>
+              updateLimitedText("title", event.target.value, taskTitleMaxLength)
+            }
             placeholder="Add a clear task title"
             required
             value={form.title}
           />
         </label>
 
-        <label className="primary-field" htmlFor="task-description">
-          Description
+        <label
+          className="character-field primary-field"
+          data-limit-state={descriptionLimitState}
+          htmlFor="task-description"
+        >
+          <span className="field-label-row">
+            <span>Description</span>
+            <CharacterCounter
+              currentLength={form.description.length}
+              id="task-description-character-count"
+              maxLength={taskDescriptionMaxLength}
+              state={descriptionLimitState}
+            />
+          </span>
           <textarea
+            aria-describedby="task-description-character-count"
+            aria-label="Description"
             disabled={disabled}
             id="task-description"
-            maxLength={1000}
-            onChange={(event) => setForm({ ...form, description: event.target.value })}
+            maxLength={taskDescriptionMaxLength}
+            onChange={(event) =>
+              updateLimitedText(
+                "description",
+                event.target.value,
+                taskDescriptionMaxLength,
+              )
+            }
             placeholder="Add the details needed to complete it"
             rows={3}
             value={form.description}

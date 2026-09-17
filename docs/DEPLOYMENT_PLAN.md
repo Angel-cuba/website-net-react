@@ -62,8 +62,11 @@ un backplane compatible.
 - una tabla o mecanismo que registre migraciones aplicadas.
 
 La baseline y `20260910_001_task_sharing_constraints.sql` fueron probadas sobre
-una base local vacia y despues sobre Azure SQL. Ambas registran su aplicacion y
-se pueden volver a ejecutar sin dejar un esquema parcial.
+una base local vacia y despues sobre Azure SQL. La migracion
+`20260917_002_expand_task_title.sql` fue validada en Azure SQL con una insercion
+transaccional de un titulo de 96 caracteres y rollback sin filas residuales.
+Todos los scripts registran su aplicacion y se pueden volver a ejecutar sin
+dejar un esquema parcial.
 
 ### 4.2 Configuracion por ambiente
 

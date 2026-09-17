@@ -96,7 +96,7 @@ BEGIN TRY
 
     CREATE TABLE dbo.Tasks (
         Id int IDENTITY(1, 1) NOT NULL,
-        Title varchar(50) NOT NULL,
+        Title nvarchar(150) NOT NULL,
         Category varchar(50) NOT NULL,
         Description varchar(max) NULL,
         OwnerUserId int NULL,
