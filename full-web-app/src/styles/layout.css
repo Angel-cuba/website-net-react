@@ -232,21 +232,6 @@
   display: none;
 }
 
-@media (max-width: 900px) {
-  .is-guest .sidebar {
-    position: static;
-    width: 100%;
-    min-height: auto;
-    border-right: 0;
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  .is-guest main {
-    min-height: 260px;
-    margin-left: 0;
-  }
-}
-
 @media (max-width: 768px) {
   .app-layout main {
     min-height: calc(100vh - 61px);

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { LogIn, UserPlus } from "lucide-react";
+import { LockKeyhole, LogIn, RefreshCw, Share2, UserPlus } from "lucide-react";
 import { Button } from "../../../components/button";
 import { getErrorMessage } from "../../../utils/errors";
 import { login, register } from "../api/auth-api";
@@ -75,6 +75,10 @@ export function AuthPanel() {
       <div className="auth-heading">
         <p className="eyebrow">Private workspace</p>
         <h1 id="auth-heading">Welcome to Wappy</h1>
+        <p className="auth-subheading">
+          Create private tasks, share them with registered accounts, and control
+          who can view or edit — kept in sync in real time.
+        </p>
       </div>
 
       <div
@@ -199,6 +203,21 @@ export function AuthPanel() {
           </p>
         )}
       </div>
+
+      <ul className="auth-highlights" aria-label="What you can do with Wappy">
+        <li>
+          <LockKeyhole aria-hidden="true" />
+          <span>Private, per-account task lists</span>
+        </li>
+        <li>
+          <Share2 aria-hidden="true" />
+          <span>Share with view-only or edit access</span>
+        </li>
+        <li>
+          <RefreshCw aria-hidden="true" />
+          <span>Real-time sync across accounts</span>
+        </li>
+      </ul>
     </section>
   );
 }

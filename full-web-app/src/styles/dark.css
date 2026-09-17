@@ -1,0 +1,120 @@
+/* Dark theme: neutral chrome with the same green + lime signature.
+   Activated by data-theme="dark" on <html> (set pre-paint in index.html). */
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-canvas: #0e100f;
+  --color-surface: #181b19;
+  --color-surface-muted: #131614;
+  --color-surface-strong: #23261f;
+  --color-border: #2a2e2b;
+  --color-border-strong: #3d423e;
+  --color-text: #eef1ec;
+  --color-text-muted: #9aa09b;
+
+  --color-primary: #47a87d;
+  --color-primary-hover: #58bb8e;
+  --color-primary-soft: #163329;
+  --color-primary-soft-strong: #245c43;
+
+  --color-accent: #dce85b;
+  --color-accent-hover: #c6d23f;
+  --color-accent-soft: #2f3512;
+  --color-accent-ink: #e7ef9f;
+
+  --color-danger: #e37063;
+  --color-danger-soft: #3a1e1b;
+  --color-warning: #d79a4e;
+  --color-warning-soft: #352910;
+  --color-info: #74a6e8;
+  --color-info-soft: #1a2942;
+
+  --color-category-backend: #4b5a99;
+  --color-category-frontend: #8f5a82;
+  --color-category-database: #3f7d6b;
+  --color-category-testing: #8a7f3a;
+  --color-category-default: #3a3f3b;
+
+  --shadow-subtle: 0 1px 2px rgb(0 0 0 / 42%), 0 6px 18px rgb(0 0 0 / 30%);
+  --shadow-raised: 0 12px 30px rgb(0 0 0 / 48%);
+  --shadow-floating: 0 24px 64px rgb(0 0 0 / 62%);
+}
+
+/* Selection + focus ring tuned for dark surfaces. */
+:root[data-theme="dark"] ::selection {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-ink);
+}
+
+:root[data-theme="dark"] button:focus-visible,
+:root[data-theme="dark"] a:focus-visible,
+:root[data-theme="dark"] input:focus-visible,
+:root[data-theme="dark"] select:focus-visible,
+:root[data-theme="dark"] textarea:focus-visible {
+  outline-color: rgb(88 187 142 / 45%);
+}
+
+/* Native controls should follow the dark scheme. */
+:root[data-theme="dark"] select {
+  color-scheme: dark;
+}
+
+/* Inputs hardcode a white hover background in light mode; keep it dark here. */
+:root[data-theme="dark"] input:hover:not(:disabled),
+:root[data-theme="dark"] select:hover:not(:disabled),
+:root[data-theme="dark"] textarea:hover:not(:disabled) {
+  background: var(--color-surface-muted);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 40%);
+}
+
+/* Frosted bars use a white translucent fill in light mode. */
+:root[data-theme="dark"] .mobile-header,
+:root[data-theme="dark"] .mobile-bottom-nav {
+  background: rgb(24 27 25 / 92%);
+}
+
+/* Soft inner highlight reads as a bright seam on dark surfaces. */
+:root[data-theme="dark"] .empty-state,
+:root[data-theme="dark"] .invitation-section-empty,
+:root[data-theme="dark"] .shared-section-empty {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
+}
+
+/* Task composer uses a light lime gradient wash. */
+:root[data-theme="dark"] .task-composer {
+  background: linear-gradient(180deg, #1e2416 0%, var(--color-surface) 44%);
+}
+
+/* Category meta chips mix the accent with white in light mode; darken instead. */
+:root[data-theme="dark"] .task-card__meta > span:first-child,
+:root[data-theme="dark"] .shared-task-card__meta > span:first-child {
+  background: color-mix(in srgb, var(--card-accent) 40%, #0e100f);
+  color: var(--color-text);
+}
+
+/* Coloured notices hardcode dark ink for light backgrounds. */
+:root[data-theme="dark"] .notice.is-success {
+  border-color: #245c43;
+  color: #8ad9af;
+}
+
+:root[data-theme="dark"] .notice.is-error {
+  border-color: #5a2a25;
+  color: #f0a79e;
+}
+
+:root[data-theme="dark"] .notice.is-warning {
+  border-color: #5a4620;
+  color: #e6c384;
+}
+
+/* Guest hero decorative lanes. */
+:root[data-theme="dark"] .guest-motion__lane {
+  border-top-color: #333b36;
+}
+
+:root[data-theme="dark"] .guest-motion__lane span {
+  border-color: #4a5751;
+  background: var(--color-surface);
+}

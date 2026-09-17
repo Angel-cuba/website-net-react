@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { IconButton } from "../../components/icon-button";
+import { ThemeToggle } from "../../components/theme-toggle";
 import { AuthPanel, useAuth } from "../../features/auth";
 import { useInvitations } from "../../features/invitations/hooks/use-invitations";
 import type { AppPath } from "../router/routes";
@@ -86,19 +87,22 @@ export function AppShell({ activePath, children, onNavigate }: AppShellProps) {
             </span>
             <span>Wappy</span>
           </a>
-          <IconButton
-            aria-controls="app-sidebar"
-            aria-expanded={isMenuOpen}
-            aria-label={isMenuOpen ? "Close navigation" : "Open navigation"}
-            onClick={() => setIsMenuOpen((isOpen) => !isOpen)}
-            type="button"
-          >
-            {isMenuOpen ? (
-              <X aria-hidden="true" />
-            ) : (
-              <Menu aria-hidden="true" />
-            )}
-          </IconButton>
+          <div className="mobile-header__actions">
+            <ThemeToggle />
+            <IconButton
+              aria-controls="app-sidebar"
+              aria-expanded={isMenuOpen}
+              aria-label={isMenuOpen ? "Close navigation" : "Open navigation"}
+              onClick={() => setIsMenuOpen((isOpen) => !isOpen)}
+              type="button"
+            >
+              {isMenuOpen ? (
+                <X aria-hidden="true" />
+              ) : (
+                <Menu aria-hidden="true" />
+              )}
+            </IconButton>
+          </div>
         </header>
       )}
 
@@ -114,6 +118,7 @@ export function AppShell({ activePath, children, onNavigate }: AppShellProps) {
             <strong>Wappy</strong>
             <span>Task workspace</span>
           </div>
+          <ThemeToggle />
         </div>
 
         {!isAuthenticated ? (
