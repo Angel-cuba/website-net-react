@@ -105,6 +105,35 @@ describe('TaskForm', () => {
     expect(status).toHaveTextContent('Completed')
   })
 
+  it('signals character thresholds and keeps only accepted text', () => {
+    renderTaskForm()
+    const title = screen.getByLabelText('Title')
+    const description = screen.getByLabelText('Description')
+    const titleField = title.closest('.character-field')
+    const descriptionField = description.closest('.character-field')
+
+    expect(screen.getByText('0 / 150')).toBeVisible()
+    expect(screen.getByText('0 / 1000')).toBeVisible()
+    expect(titleField).toHaveAttribute('data-limit-state', 'calm')
+
+    fireEvent.change(title, { target: { value: 'a'.repeat(90) } })
+    expect(titleField).toHaveAttribute('data-limit-state', 'attention')
+
+    fireEvent.change(title, { target: { value: 'a'.repeat(120) } })
+    expect(titleField).toHaveAttribute('data-limit-state', 'warning')
+
+    fireEvent.change(title, { target: { value: 'a'.repeat(151) } })
+    expect(title).toHaveValue('a'.repeat(150))
+    expect(titleField).toHaveAttribute('data-limit-state', 'limit')
+    expect(screen.getByText('Limit reached')).toBeVisible()
+    expect(screen.getByText('150 / 150')).toBeVisible()
+
+    fireEvent.change(description, { target: { value: 'b'.repeat(1001) } })
+    expect(description).toHaveValue('b'.repeat(1000))
+    expect(descriptionField).toHaveAttribute('data-limit-state', 'limit')
+    expect(screen.getByText('1000 / 1000')).toBeVisible()
+  })
+
   it('exposes the five-hour minimum and saving state through the form controls', () => {
     renderTaskForm({ disabled: true })
 

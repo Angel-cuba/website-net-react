@@ -424,6 +424,81 @@ textarea:focus,
   gap: var(--space-4) var(--space-3);
 }
 
+.field-label-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.character-counter {
+  display: inline-flex;
+  min-height: 22px;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 7px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+  transition: color var(--transition-fast), border-color var(--transition-fast),
+    background var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.character-counter strong {
+  font: inherit;
+  font-weight: 800;
+}
+
+.character-field :is(input, textarea) {
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    box-shadow var(--transition-base);
+}
+
+.character-field[data-limit-state="attention"] :is(input, textarea) {
+  border-color: #aab573;
+  box-shadow: 0 0 0 3px rgb(220 232 91 / 16%),
+    0 8px 20px rgb(49 55 12 / 10%);
+}
+
+.character-field[data-limit-state="attention"] .character-counter {
+  border-color: #dfe59b;
+  background: var(--color-accent-soft);
+  color: var(--color-accent-ink);
+  box-shadow: 0 3px 10px rgb(49 55 12 / 8%);
+}
+
+.character-field[data-limit-state="warning"] :is(input, textarea) {
+  border-color: #c16b55;
+  box-shadow: 0 0 0 3px rgb(193 107 85 / 15%),
+    0 9px 22px rgb(170 45 36 / 10%);
+}
+
+.character-field[data-limit-state="warning"] .character-counter {
+  border-color: #efc1b9;
+  background: var(--color-danger-soft);
+  color: #8f3b2f;
+  box-shadow: 0 3px 10px rgb(170 45 36 / 8%);
+}
+
+.character-field[data-limit-state="limit"] :is(input, textarea) {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px rgb(170 45 36 / 18%);
+}
+
+.character-field[data-limit-state="limit"] .character-counter {
+  border-color: var(--color-danger);
+  background: var(--color-danger);
+  color: #fff;
+  box-shadow: none;
+}
+
 .task-feedback:empty,
 .shared-feedback:empty,
 .invitations-feedback:empty {
