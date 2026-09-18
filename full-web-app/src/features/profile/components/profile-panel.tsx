@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../auth";
+import { RequestStatusNotice } from "../../../components/request-status-notice";
 import { ApiError } from "../../../lib/http-client";
 import { getErrorMessage } from "../../../utils/errors";
 import { deleteUserAccount, updateUserProfile, useProfile } from "../index";
@@ -121,7 +122,11 @@ export function ProfilePanel() {
       </div>
 
       {isProfileLoading ? (
-        <p>Loading profile...</p>
+        <RequestStatusNotice
+          description="Your account details will appear here as soon as the service responds."
+          isBusy
+          title="Loading profile..."
+        />
       ) : isEditing ? (
         <ProfileForm
           disabled={isBusy}

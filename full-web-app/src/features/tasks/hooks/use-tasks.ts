@@ -19,6 +19,7 @@ export function useTasks() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(isAuthenticated);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleRequestError = useCallback(
     (caughtError: unknown) => {
@@ -145,7 +146,7 @@ export function useTasks() {
   async function runTaskAction(action: () => Promise<void>): Promise<boolean> {
     setError("");
     setMessage("");
-    setIsLoading(true);
+    setIsSubmitting(true);
 
     try {
       await action();
@@ -154,7 +155,7 @@ export function useTasks() {
       handleRequestError(caughtError);
       return false;
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   }
 
@@ -163,6 +164,7 @@ export function useTasks() {
     message,
     error,
     isLoading,
+    isSubmitting,
     createTask,
     saveTask,
     toggleTask,

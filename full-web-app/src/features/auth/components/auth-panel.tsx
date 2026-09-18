@@ -1,11 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { LockKeyhole, LogIn, RefreshCw, Share2, UserPlus } from "lucide-react";
 import { Button } from "../../../components/button";
+import { LoadingButtonContent } from "../../../components/loading-button-content";
+import { RequestStatusNotice } from "../../../components/request-status-notice";
+import { ApiError } from "../../../lib/http-client";
 import { getErrorMessage } from "../../../utils/errors";
 import { login, register } from "../api/auth-api";
 import { useAuth } from "../hooks/use-auth";
+import { useServiceReadiness } from "../hooks/use-service-readiness";
 import type { AuthMode } from "../types/auth";
+import type { AuthCredentials } from "../types/auth";
 import {
   AUTH_PASSWORD_MAX_LENGTH,
   AUTH_PASSWORD_MIN_LENGTH,
@@ -22,13 +27,33 @@ export function AuthPanel() {
     failAuthentication,
     status,
   } = useAuth();
+  const { retry: retryReadiness, status: readinessStatus } =
+    useServiceReadiness();
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [validationErrors, setValidationErrors] =
     useState<AuthValidationErrors>({});
+  const [requestFailure, setRequestFailure] = useState<{
+    error: unknown;
+    message: string;
+  } | null>(null);
+  const [isSlowRequest, setIsSlowRequest] = useState(false);
   const isLoading = status === "authenticating";
+  const feedbackError = requestFailure?.message || error;
+  const isRecoverableFailure =
+    requestFailure?.error instanceof ApiError &&
+    ["network", "timeout", "unavailable", "server"].includes(
+      requestFailure.error.kind,
+    );
+
+  useEffect(() => {
+    if (!isLoading) return;
+
+    const timer = window.setTimeout(() => setIsSlowRequest(true), 3_000);
+    return () => window.clearTimeout(timer);
+  }, [isLoading]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,13 +67,19 @@ export function AuthPanel() {
       return;
     }
 
+    await submitCredentials(validation.credentials);
+  }
+
+  async function submitCredentials(credentials: AuthCredentials) {
     beginAuthentication();
+    setIsSlowRequest(false);
+    setRequestFailure(null);
 
     try {
       const response =
         mode === "login"
-          ? await login(validation.credentials)
-          : await register(validation.credentials);
+          ? await login(credentials)
+          : await register(credentials);
       const nextToken = response.data?.token;
 
       if (!nextToken) {
@@ -59,14 +90,30 @@ export function AuthPanel() {
       setPassword("");
       setMessage(response.message);
     } catch (caughtError) {
-      failAuthentication(getErrorMessage(caughtError));
+      const nextMessage = getErrorMessage(caughtError);
+      setRequestFailure({ error: caughtError, message: nextMessage });
+      failAuthentication(nextMessage);
     }
+  }
+
+  async function retryAuthentication() {
+    const validation = validateAuthCredentials({ email, password });
+    setValidationErrors(validation.errors);
+    if (!validation.isValid) return;
+
+    await submitCredentials(validation.credentials);
+  }
+
+  function clearRequestFeedback() {
+    setRequestFailure(null);
+    clearAuthFeedback();
   }
 
   function changeMode(nextMode: AuthMode) {
     setMode(nextMode);
     setMessage("");
     setValidationErrors({});
+    setRequestFailure(null);
     clearAuthFeedback();
   }
 
@@ -89,6 +136,7 @@ export function AuthPanel() {
         <Button
           aria-pressed={mode === "login"}
           className={mode === "login" ? "is-active" : ""}
+          disabled={isLoading}
           onClick={() => changeMode("login")}
           type="button"
         >
@@ -97,6 +145,7 @@ export function AuthPanel() {
         <Button
           aria-pressed={mode === "register"}
           className={mode === "register" ? "is-active" : ""}
+          disabled={isLoading}
           onClick={() => changeMode("register")}
           type="button"
         >
@@ -117,6 +166,7 @@ export function AuthPanel() {
             aria-invalid={Boolean(validationErrors.email)}
             autoCapitalize="none"
             autoComplete="email"
+            disabled={isLoading}
             id="auth-email"
             name="email"
             onChange={(event) => {
@@ -125,7 +175,7 @@ export function AuthPanel() {
                 ...current,
                 email: undefined,
               }));
-              if (status === "error") clearAuthFeedback();
+              if (status === "error" || requestFailure) clearRequestFeedback();
             }}
             required
             spellCheck={false}
@@ -149,6 +199,7 @@ export function AuthPanel() {
             autoComplete={
               mode === "login" ? "current-password" : "new-password"
             }
+            disabled={isLoading}
             id="auth-password"
             maxLength={AUTH_PASSWORD_MAX_LENGTH}
             minLength={AUTH_PASSWORD_MIN_LENGTH}
@@ -159,7 +210,7 @@ export function AuthPanel() {
                 ...current,
                 password: undefined,
               }));
-              if (status === "error") clearAuthFeedback();
+              if (status === "error" || requestFailure) clearRequestFeedback();
             }}
             required
             type="password"
@@ -177,16 +228,19 @@ export function AuthPanel() {
         </div>
 
         <Button disabled={isLoading} type="submit" variant="primary">
-          {mode === "login" ? (
-            <LogIn aria-hidden="true" />
-          ) : (
-            <UserPlus aria-hidden="true" />
-          )}
-          {isLoading
-            ? "Please wait"
-            : mode === "login"
-              ? "Login"
-              : "Create account"}
+          <LoadingButtonContent
+            icon={
+              mode === "login" ? (
+                <LogIn aria-hidden="true" />
+              ) : (
+                <UserPlus aria-hidden="true" />
+              )
+            }
+            isLoading={isLoading}
+            loadingLabel={mode === "login" ? "Signing in..." : "Creating account..."}
+          >
+            {mode === "login" ? "Login" : "Create account"}
+          </LoadingButtonContent>
         </Button>
       </form>
 
@@ -197,11 +251,44 @@ export function AuthPanel() {
           </p>
         )}
         {message && <p className="notice is-success">{message}</p>}
-        {error && (
+        {isRecoverableFailure && requestFailure ? (
+          <RequestStatusNotice
+            actionLabel="Try again"
+            description={
+              requestFailure.error instanceof ApiError &&
+              requestFailure.error.kind === "server"
+                ? "The request did not complete successfully. Your details are still here, so you can try once more."
+                : "This demo uses on-demand hosting and may still be starting. Your details are still here; wait a moment and try again."
+            }
+            onAction={() => void retryAuthentication()}
+            title={
+              requestFailure.error instanceof ApiError &&
+              requestFailure.error.kind === "server"
+                ? "We couldn't complete the request"
+                : "The demo service needs a little more time"
+            }
+            tone="error"
+          />
+        ) : feedbackError ? (
           <p className="notice is-error" role="alert">
-            {error}
+            {feedbackError}
           </p>
-        )}
+        ) : (isLoading && isSlowRequest) || readinessStatus === "delayed" ? (
+          <RequestStatusNotice
+            description="This demo uses on-demand hosting. The first request after inactivity can take a little longer; keep this tab open and it will continue automatically."
+            isBusy
+            title={isLoading ? "Preparing your workspace" : "Waking the demo service"}
+            tone="warning"
+          />
+        ) : readinessStatus === "unavailable" ? (
+          <RequestStatusNotice
+            actionLabel="Check again"
+            description="It may still be starting. You can enter your details while we check the service again."
+            onAction={retryReadiness}
+            title="The demo service is not ready yet"
+            tone="warning"
+          />
+        ) : null}
       </div>
 
       <ul className="auth-highlights" aria-label="What you can do with Wappy">

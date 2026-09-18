@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, apiRequest } from './http-client'
 
 describe('apiRequest', () => {
@@ -6,6 +6,10 @@ describe('apiRequest', () => {
 
   beforeEach(() => {
     vi.stubGlobal('fetch', fetchMock)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('builds the API URL and includes the bearer token', async () => {
@@ -83,6 +87,8 @@ describe('apiRequest', () => {
       name: 'ApiError',
       status: 503,
       message: 'Service unavailable',
+      kind: 'unavailable',
+      retryable: true,
     })
   })
 
@@ -93,6 +99,48 @@ describe('apiRequest', () => {
       status: 502,
       message: 'Request failed with status 502',
     })
+  })
+
+  it('classifies unexpected server errors without marking them retryable', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 500 }))
+
+    await expect(apiRequest('/api/tasks/all')).rejects.toMatchObject({
+      status: 500,
+      kind: 'server',
+      retryable: false,
+    })
+  })
+
+  it('classifies network failures as retryable', async () => {
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'))
+
+    await expect(apiRequest('/api/tasks/all')).rejects.toMatchObject({
+      status: 0,
+      kind: 'network',
+      retryable: true,
+      message: 'The service could not be reached.',
+    })
+  })
+
+  it('aborts and classifies requests that exceed their timeout', async () => {
+    vi.useFakeTimers()
+    fetchMock.mockImplementation((_input, init) =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => {
+          reject(new DOMException('Aborted', 'AbortError'))
+        })
+      }),
+    )
+
+    const request = apiRequest('/health/ready', { timeoutMs: 1_000 })
+    const expectation = expect(request).rejects.toMatchObject({
+      status: 0,
+      kind: 'timeout',
+      retryable: true,
+    })
+
+    await vi.advanceTimersByTimeAsync(1_000)
+    await expectation
   })
 })
 

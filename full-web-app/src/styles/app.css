@@ -395,6 +395,65 @@ input[aria-invalid="true"]:focus {
   min-height: 48px;
 }
 
+.request-status {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.45;
+}
+
+.request-status > svg {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
+
+.request-status__copy {
+  min-width: 0;
+}
+
+.request-status__copy strong,
+.request-status__copy p {
+  margin: 0;
+}
+
+.request-status__copy strong {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--color-text);
+}
+
+.request-status .button {
+  grid-column: 2;
+  min-height: 30px;
+  justify-self: start;
+  padding-inline: 8px;
+}
+
+.request-status--warning {
+  border-color: #e4ca91;
+  background: var(--color-warning-soft);
+  color: #744007;
+}
+
+.request-status--error {
+  border-color: #e6b9b5;
+  background: var(--color-danger-soft);
+  color: #8e1c14;
+}
+
+.request-status--warning .request-status__copy strong,
+.request-status--error .request-status__copy strong {
+  color: inherit;
+}
+
 .notice {
   margin: 0;
   padding: 10px 12px;

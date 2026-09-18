@@ -22,6 +22,7 @@ export function TaskPanel() {
     message,
     error,
     isLoading,
+    isSubmitting,
     createTask,
     saveTask,
     toggleTask,
@@ -30,6 +31,7 @@ export function TaskPanel() {
   const {
     sharedWithYou,
     isLoading: isLoadingSharedTasks,
+    isSubmitting: isSubmittingSharedTask,
     message: sharedTasksMessage,
     error: sharedTasksError,
     saveSharedTask,
@@ -51,6 +53,8 @@ export function TaskPanel() {
       : editingOwnedTask;
   const sharingTask = tasks.find((task) => task.id === sharingTaskId) ?? null;
   const isWorkspaceLoading = isLoading || isLoadingSharedTasks;
+  const isWorkspaceBusy =
+    isWorkspaceLoading || isSubmitting || isSubmittingSharedTask;
   const workspaceTaskCount = tasks.length + sharedWithYou.length;
 
   async function updateEditingTask(payload: Parameters<typeof saveTask>[1]) {
@@ -120,7 +124,7 @@ export function TaskPanel() {
 
       {(isComposerOpen || editingTask) && (
         <TaskForm
-          disabled={isWorkspaceLoading}
+          disabled={isWorkspaceBusy}
           editingTask={editingTask}
           isEditingSharedTask={editingTaskTarget?.source === "shared"}
           key={
@@ -157,7 +161,7 @@ export function TaskPanel() {
       </div>
 
       <TaskList
-        isLoading={isWorkspaceLoading}
+        isLoading={isWorkspaceBusy}
         onDelete={deleteTask}
         onEdit={(id) => setEditingTaskTarget({ id, source: "owned" })}
         onEditShared={(id) => setEditingTaskTarget({ id, source: "shared" })}

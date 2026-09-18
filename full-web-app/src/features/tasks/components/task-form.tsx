@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Plus, Save, X } from "lucide-react";
 import { Button } from "../../../components/button";
+import { LoadingButtonContent } from "../../../components/loading-button-content";
 import { SelectField } from "../../../components/select-field";
 import {
   getMinimumDueDateInputValue,
@@ -125,6 +126,7 @@ export function TaskForm({
   const [minimumDueDate, setMinimumDueDate] = useState(
     getMinimumDueDateInputValue,
   );
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const titleLimitState = getCharacterLimitState(
     form.title.length,
     taskTitleMaxLength,
@@ -144,15 +146,22 @@ export function TaskForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (disabled || isSubmitting) return;
 
-    const succeeded = editingTask
-      ? await onUpdate(form)
-      : onCreate
-        ? await onCreate(form)
-        : false;
+    setIsSubmitting(true);
 
-    if (succeeded) {
-      setForm(createEmptyTaskForm());
+    try {
+      const succeeded = editingTask
+        ? await onUpdate(form)
+        : onCreate
+          ? await onCreate(form)
+          : false;
+
+      if (succeeded) {
+        setForm(createEmptyTaskForm());
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -192,7 +201,11 @@ export function TaskForm({
         )}
       </div>
 
-      <form aria-busy={disabled} className="task-form" onSubmit={handleSubmit}>
+      <form
+        aria-busy={isSubmitting}
+        className="task-form"
+        onSubmit={handleSubmit}
+      >
         <label
           className="character-field primary-field"
           data-limit-state={titleLimitState}
@@ -324,13 +337,24 @@ export function TaskForm({
         </label>
 
         <div className="form-actions">
-          <Button disabled={disabled} type="submit" variant="primary">
-            {editingTask ? (
-              <Save aria-hidden="true" />
-            ) : (
-              <Plus aria-hidden="true" />
-            )}
-            {disabled ? "Saving" : editingTask ? "Save changes" : "Create task"}
+          <Button
+            disabled={disabled || isSubmitting}
+            type="submit"
+            variant="primary"
+          >
+            <LoadingButtonContent
+              icon={
+                editingTask ? (
+                  <Save aria-hidden="true" />
+                ) : (
+                  <Plus aria-hidden="true" />
+                )
+              }
+              isLoading={isSubmitting}
+              loadingLabel={editingTask ? "Saving..." : "Creating..."}
+            >
+              {editingTask ? "Save changes" : "Create task"}
+            </LoadingButtonContent>
           </Button>
         </div>
       </form>

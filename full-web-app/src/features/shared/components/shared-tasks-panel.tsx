@@ -22,6 +22,7 @@ export function SharedTasksPanel() {
     sharedWithYou,
     sharedByYou,
     isLoading,
+    isSubmitting,
     message,
     error,
     saveSharedTask,
@@ -32,6 +33,7 @@ export function SharedTasksPanel() {
   );
   const editingTask = selectedEditingTask?.canEdit ? selectedEditingTask : null;
   const hasSharedTasks = sharedWithYou.length > 0 || sharedByYou.length > 0;
+  const isBusy = isLoading || isSubmitting;
 
   async function updateEditingTask(payload: TaskPayload) {
     if (!editingTask) return false;
@@ -55,7 +57,7 @@ export function SharedTasksPanel() {
 
       {editingTask && (
         <TaskForm
-          disabled={isLoading}
+          disabled={isBusy}
           editingTask={editingTask}
           isEditingSharedTask
           key={`${editingTask.id}:${editingTask.updatedAt}:${editingTask.isCompleted}`}
@@ -130,10 +132,10 @@ export function SharedTasksPanel() {
                 </div>
 
                 {sharedWithYou.length > 0 ? (
-                  <div aria-busy={isLoading} className="shared-task-list">
+                  <div aria-busy={isSubmitting} className="shared-task-list">
                     {sharedWithYou.map((task) => (
                       <SharedTaskCard
-                        disabled={isLoading}
+                        disabled={isBusy}
                         key={task.id}
                         onEdit={setEditingTaskId}
                         onToggle={toggleSharedTask}
@@ -160,7 +162,7 @@ export function SharedTasksPanel() {
                 </div>
 
                 {sharedByYou.length > 0 ? (
-                  <div aria-busy={isLoading} className="shared-task-list">
+                  <div aria-busy={isSubmitting} className="shared-task-list">
                     {sharedByYou.map((task) => (
                       <OwnedSharedTaskCard
                         key={task.id}

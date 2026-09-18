@@ -170,13 +170,14 @@ export function useSharedTasks() {
   const isLoading = Boolean(
     isAuthenticated &&
       userId &&
-      (!hasCurrentSharedTasks || isSubmitting),
+      !hasCurrentSharedTasks,
   );
 
   return {
     sharedWithYou: currentSharedWithYou,
     sharedByYou: currentSharedByYou,
     isLoading,
+    isSubmitting,
     message,
     error: currentError,
     saveSharedTask,

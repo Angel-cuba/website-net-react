@@ -51,6 +51,31 @@ describe('TaskForm', () => {
     expect(screen.getByLabelText('Title')).toHaveValue('Keep this draft')
   })
 
+  it('shows progress only while this form is submitting', async () => {
+    const user = userEvent.setup()
+    let finishCreate: (succeeded: boolean) => void = () => undefined
+    const pendingCreate = new Promise<boolean>((resolve) => {
+      finishCreate = resolve
+    })
+    const onCreate = vi.fn(() => pendingCreate)
+    renderTaskForm({ onCreate })
+
+    await user.type(screen.getByLabelText('Title'), 'Wait for this task')
+    await user.click(screen.getByRole('button', { name: 'Create task' }))
+
+    expect(screen.getByRole('button', { name: 'Creating...' })).toBeDisabled()
+    expect(screen.getByLabelText('Title').closest('form')).toHaveAttribute(
+      'aria-busy',
+      'true',
+    )
+
+    finishCreate(true)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Create task' })).toBeEnabled()
+    })
+  })
+
   it('shows existing values and submits updates for a shared task', async () => {
     const user = userEvent.setup()
     const editingTask = createTask()
@@ -134,8 +159,8 @@ describe('TaskForm', () => {
     expect(screen.getByText('1000 / 1000')).toBeVisible()
   })
 
-  it('exposes the five-hour minimum and saving state through the form controls', () => {
-    renderTaskForm({ disabled: true })
+  it('exposes the five-hour minimum through the due date control', () => {
+    renderTaskForm()
 
     expect(screen.getByLabelText(/^Due date/)).toHaveAttribute(
       'min',
@@ -144,9 +169,8 @@ describe('TaskForm', () => {
     expect(screen.getByText('At least 5 hours from now.')).toBeVisible()
     expect(screen.getByLabelText('Title').closest('form')).toHaveAttribute(
       'aria-busy',
-      'true',
+      'false',
     )
-    expect(screen.getByRole('button', { name: 'Saving' })).toBeDisabled()
   })
 })
 
