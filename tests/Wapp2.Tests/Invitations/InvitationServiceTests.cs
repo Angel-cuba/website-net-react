@@ -258,6 +258,7 @@ public class InvitationServiceTests
         );
 
         Assert.Equal(InvitationStatuses.Accepted, invitations.LastDecision);
+        Assert.Null(invitations.LastRejectionReason);
         Assert.Equal(InvitationStatuses.Accepted, response.Status);
         Assert.Equal([42], notifier.InvitationsChangedFor);
         Assert.Equal([7], notifier.TaskSharingChangedFor);
@@ -267,10 +268,15 @@ public class InvitationServiceTests
     [Fact]
     public async Task RespondToInvitation_WhenRejected_DoesNotNotifySharedTasks()
     {
+        var respondedInvitation = CreateInvitationDetails(
+            InvitationStatuses.Rejected,
+            42
+        );
+        respondedInvitation.RejectionReason = "I cannot take this on right now.";
         var invitations = new InvitationRepositoryStub
         {
             InvitationForRecipient = CreatePendingInvitation(),
-            RespondedInvitation = CreateInvitationDetails(InvitationStatuses.Rejected, 42)
+            RespondedInvitation = respondedInvitation
         };
         var notifier = new RecordingRealtimeNotifier();
         var service = CreateService(invitations, notifier);
@@ -278,13 +284,80 @@ public class InvitationServiceTests
         var response = await service.RespondToInvitation(
             100,
             42,
-            RespondRequest("rejected")
+            RespondRequest("rejected", "  I cannot take this on right now.  ")
         );
 
         Assert.Equal(InvitationStatuses.Rejected, response.Status);
+        Assert.Equal("I cannot take this on right now.", response.RejectionReason);
+        Assert.Equal("I cannot take this on right now.", invitations.LastRejectionReason);
         Assert.Equal([42], notifier.InvitationsChangedFor);
         Assert.Equal([7], notifier.TaskSharingChangedFor);
         Assert.Empty(notifier.SharedTasksChangedFor);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task RespondToInvitation_WhenRejectedWithoutReason_ThrowsBadRequest(
+        string? rejectionReason
+    )
+    {
+        var invitations = CreatePendingRecipientRepository();
+        var notifier = new RecordingRealtimeNotifier();
+        var service = CreateService(invitations, notifier);
+
+        var exception = await Assert.ThrowsAsync<ErrorHandlingMiddlewareException>(
+            () => service.RespondToInvitation(
+                100,
+                42,
+                RespondRequest("rejected", rejectionReason)
+            )
+        );
+
+        Assert.Equal(HttpStatusCode.BadRequest, exception.StatusCode);
+        Assert.Equal(0, invitations.RespondToInvitationCallCount);
+        Assert.Empty(notifier.AllNotifications);
+    }
+
+    [Fact]
+    public async Task RespondToInvitation_WhenAcceptedWithRejectionReason_ThrowsBadRequest()
+    {
+        var invitations = CreatePendingRecipientRepository();
+        var notifier = new RecordingRealtimeNotifier();
+        var service = CreateService(invitations, notifier);
+
+        var exception = await Assert.ThrowsAsync<ErrorHandlingMiddlewareException>(
+            () => service.RespondToInvitation(
+                100,
+                42,
+                RespondRequest("accepted", "This should not be stored.")
+            )
+        );
+
+        Assert.Equal(HttpStatusCode.BadRequest, exception.StatusCode);
+        Assert.Equal(0, invitations.RespondToInvitationCallCount);
+        Assert.Empty(notifier.AllNotifications);
+    }
+
+    [Fact]
+    public async Task RespondToInvitation_WhenRejectionReasonIsTooLong_ThrowsBadRequest()
+    {
+        var invitations = CreatePendingRecipientRepository();
+        var notifier = new RecordingRealtimeNotifier();
+        var service = CreateService(invitations, notifier);
+
+        var exception = await Assert.ThrowsAsync<ErrorHandlingMiddlewareException>(
+            () => service.RespondToInvitation(
+                100,
+                42,
+                RespondRequest("rejected", new string('a', 501))
+            )
+        );
+
+        Assert.Equal(HttpStatusCode.BadRequest, exception.StatusCode);
+        Assert.Equal(0, invitations.RespondToInvitationCallCount);
+        Assert.Empty(notifier.AllNotifications);
     }
 
     [Fact]
@@ -407,8 +480,15 @@ public class InvitationServiceTests
         return new CreateInvitationRequest { InvitedEmail = email };
     }
 
-    private static RespondInvitationRequest RespondRequest(string decision)
+    private static RespondInvitationRequest RespondRequest(
+        string decision,
+        string? rejectionReason = null
+    )
     {
-        return new RespondInvitationRequest { Decision = decision };
+        return new RespondInvitationRequest
+        {
+            Decision = decision,
+            RejectionReason = rejectionReason
+        };
     }
 }

@@ -13,6 +13,7 @@ export type InvitationsContextValue = {
   respond: (
     invitationId: number,
     decision: InvitationDecision,
+    rejectionReason?: string,
   ) => Promise<boolean>;
 };
 

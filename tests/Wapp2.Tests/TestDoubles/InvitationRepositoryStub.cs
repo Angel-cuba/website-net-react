@@ -21,6 +21,7 @@ internal sealed class InvitationRepositoryStub : IInvitationRepository
     public int? LastResponseInvitationId { get; private set; }
     public int? LastResponseUserId { get; private set; }
     public string? LastDecision { get; private set; }
+    public string? LastRejectionReason { get; private set; }
     public int? LastDeleteInvitationId { get; private set; }
     public int? LastDeleteOwnerUserId { get; private set; }
 
@@ -63,13 +64,15 @@ internal sealed class InvitationRepositoryStub : IInvitationRepository
     public Task<TaskInvitationDetailsModel?> RespondToInvitation(
         int invitationId,
         int invitedUserId,
-        string decision
+        string decision,
+        string? rejectionReason
     )
     {
         RespondToInvitationCallCount++;
         LastResponseInvitationId = invitationId;
         LastResponseUserId = invitedUserId;
         LastDecision = decision;
+        LastRejectionReason = rejectionReason;
         return Task.FromResult(RespondedInvitation);
     }
 

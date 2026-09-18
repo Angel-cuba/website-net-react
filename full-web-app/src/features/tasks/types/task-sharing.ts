@@ -15,9 +15,21 @@ export type TaskAccessMember = {
   sharedAt: string;
 };
 
+export type TaskInvitationActivity = {
+  invitationId: number;
+  invitedEmail: string;
+  invitedName: string;
+  invitedAvatarUrl: string | null;
+  status: "rejected";
+  rejectionReason: string | null;
+  createdAt: string;
+  respondedAt: string;
+};
+
 export type TaskSharing = {
   taskId: number;
   taskTitle: string;
   pendingInvitations: PendingTaskInvitation[];
+  recentResponses: TaskInvitationActivity[];
   members: TaskAccessMember[];
 };

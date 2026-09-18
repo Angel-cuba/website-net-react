@@ -152,6 +152,36 @@ describe('InvitationsProvider', () => {
     expect(result.current.message).toBe('')
   })
 
+  it('sends a normalized rejection reason', async () => {
+    authMock.current = { isAuthenticated: true, user: { id: '9' } }
+    invitationsApiMock.getReceivedInvitations.mockResolvedValue(
+      apiResponse([createInvitation()]),
+    )
+    invitationsApiMock.respondToInvitation.mockResolvedValue(
+      apiResponse(
+        createInvitation({
+          status: 'rejected',
+          rejectionReason: 'I am at capacity.',
+        }),
+      ),
+    )
+    const { result } = renderInvitations()
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    await act(async () => {
+      await result.current.respond(1, 'rejected', '  I am at capacity.  ')
+    })
+
+    expect(invitationsApiMock.respondToInvitation).toHaveBeenCalledWith(1, {
+      decision: 'rejected',
+      rejectionReason: 'I am at capacity.',
+    })
+    expect(result.current.invitations[0].rejectionReason).toBe(
+      'I am at capacity.',
+    )
+  })
+
   it('expires the session when loading invitations returns 401', async () => {
     authMock.current = { isAuthenticated: true, user: { id: '9' } }
     invitationsApiMock.getReceivedInvitations.mockRejectedValue(
@@ -199,6 +229,7 @@ function createInvitation(overrides: Partial<InvitationItem> = {}): InvitationIt
     hasActiveAccess: false,
     createdAt: '2026-09-12T08:00:00Z',
     respondedAt: null,
+    rejectionReason: null,
     ...overrides,
   }
 }

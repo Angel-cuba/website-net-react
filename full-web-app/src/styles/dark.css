@@ -109,6 +109,16 @@
   color: #e6c384;
 }
 
+:root[data-theme="dark"] .request-status--warning {
+  border-color: #725927;
+  color: #f0ce8d;
+}
+
+:root[data-theme="dark"] .request-status--error {
+  border-color: #6b302b;
+  color: #f3ada4;
+}
+
 /* Guest hero decorative lanes. */
 :root[data-theme="dark"] .guest-motion__lane {
   border-top-color: #333b36;

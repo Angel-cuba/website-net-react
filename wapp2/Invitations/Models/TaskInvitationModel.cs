@@ -10,4 +10,5 @@ public class TaskInvitationModel
     public string Status { get; set; } = InvitationStatuses.Pending;
     public DateTime CreatedAt { get; set; }
     public DateTime? RespondedAt { get; set; }
+    public string? RejectionReason { get; set; }
 }

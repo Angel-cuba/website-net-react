@@ -1,3 +1,5 @@
+import { useState } from "react";
+import type { FormEvent } from "react";
 import {
   Check,
   CheckCircle2,
@@ -19,8 +21,14 @@ type InvitationCardProps = {
   disabled: boolean;
   invitation: InvitationItem;
   isResponding: boolean;
-  onRespond: (invitationId: number, decision: InvitationDecision) => Promise<boolean>;
+  onRespond: (
+    invitationId: number,
+    decision: InvitationDecision,
+    rejectionReason?: string,
+  ) => Promise<boolean>;
 };
+
+const rejectionReasonMaxLength = 500;
 
 export function InvitationCard({
   disabled,
@@ -28,9 +36,12 @@ export function InvitationCard({
   isResponding,
   onRespond,
 }: InvitationCardProps) {
+  const [isDeclining, setIsDeclining] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
   const isPending = invitation.status === "pending";
   const isAccessRevoked =
     invitation.status === "accepted" && !invitation.hasActiveAccess;
+  const normalizedRejectionReason = rejectionReason.trim();
   const inviterName = invitation.invitedByName || invitation.invitedByEmail;
   const displayStatus = isAccessRevoked ? "revoked" : invitation.status;
   const StatusIcon = isAccessRevoked
@@ -38,6 +49,22 @@ export function InvitationCard({
     : invitation.status === "accepted"
       ? CheckCircle2
       : XCircle;
+
+  async function handleDecline(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!normalizedRejectionReason) return;
+
+    const succeeded = await onRespond(
+      invitation.id,
+      "rejected",
+      normalizedRejectionReason,
+    );
+
+    if (succeeded) {
+      setIsDeclining(false);
+      setRejectionReason("");
+    }
+  }
 
   return (
     <article className={`invitation-card invitation-card--${displayStatus}`}>
@@ -79,11 +106,18 @@ export function InvitationCard({
           </span>
         </div>
 
-        {isPending && (
+        {!isPending && invitation.rejectionReason && (
+          <div className="invitation-card__reason">
+            <strong>Reason</strong>
+            <p>{invitation.rejectionReason}</p>
+          </div>
+        )}
+
+        {isPending && !isDeclining && (
           <div className="invitation-card__actions">
             <Button
               disabled={disabled}
-              onClick={() => void onRespond(invitation.id, "rejected")}
+              onClick={() => setIsDeclining(true)}
               type="button"
             >
               <X aria-hidden="true" />
@@ -103,6 +137,56 @@ export function InvitationCard({
               {isResponding ? "Saving" : "Accept"}
             </Button>
           </div>
+        )}
+
+        {isPending && isDeclining && (
+          <form className="invitation-decline" onSubmit={handleDecline}>
+            <label htmlFor={`invitation-${invitation.id}-rejection-reason`}>
+              <span className="field-label-row">
+                <span>
+                  Reason for declining <small>Required</small>
+                </span>
+                <span className="character-counter">
+                  {rejectionReason.length} / {rejectionReasonMaxLength}
+                </span>
+              </span>
+              <textarea
+                autoFocus
+                disabled={disabled}
+                id={`invitation-${invitation.id}-rejection-reason`}
+                maxLength={rejectionReasonMaxLength}
+                onChange={(event) => setRejectionReason(event.target.value)}
+                placeholder="Add a short note for the task owner"
+                required
+                rows={3}
+                value={rejectionReason}
+              />
+            </label>
+            <div className="invitation-decline__actions">
+              <Button
+                disabled={disabled}
+                onClick={() => {
+                  setIsDeclining(false);
+                  setRejectionReason("");
+                }}
+                type="button"
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={disabled || !normalizedRejectionReason}
+                type="submit"
+                variant="danger"
+              >
+                {isResponding ? (
+                  <LoaderCircle aria-hidden="true" className="is-spinning" />
+                ) : (
+                  <X aria-hidden="true" />
+                )}
+                {isResponding ? "Declining" : "Confirm decline"}
+              </Button>
+            </div>
+          </form>
         )}
       </div>
     </article>

@@ -127,9 +127,22 @@ BEGIN TRY
         CreatedAt datetime2(7) NOT NULL
             CONSTRAINT DF_TaskInvitations_CreatedAt DEFAULT (SYSUTCDATETIME()),
         RespondedAt datetime2(7) NULL,
+        RejectionReason nvarchar(500) NULL,
         CONSTRAINT PK_TaskInvitations PRIMARY KEY CLUSTERED (Id),
         CONSTRAINT CK_TaskInvitations_Status
             CHECK (Status IN (N'pending', N'accepted', N'rejected')),
+        CONSTRAINT CK_TaskInvitations_RejectionReason
+            CHECK (
+                (
+                    Status = N'rejected'
+                    AND RejectionReason IS NOT NULL
+                    AND LEN(LTRIM(RTRIM(RejectionReason))) BETWEEN 1 AND 500
+                )
+                OR (
+                    Status <> N'rejected'
+                    AND RejectionReason IS NULL
+                )
+            ),
         CONSTRAINT FK_TaskInvitations_Tasks
             FOREIGN KEY (TaskId) REFERENCES dbo.Tasks (Id)
             ON DELETE NO ACTION

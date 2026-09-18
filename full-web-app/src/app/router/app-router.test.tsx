@@ -203,6 +203,7 @@ function createInvitation(overrides: Partial<InvitationItem> = {}): InvitationIt
     hasActiveAccess: false,
     createdAt: '2026-09-12T08:00:00Z',
     respondedAt: null,
+    rejectionReason: null,
     ...overrides,
   }
 }

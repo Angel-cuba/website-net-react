@@ -139,10 +139,39 @@ public class InvitationService(
             );
         }
 
+        var rejectionReason = string.IsNullOrWhiteSpace(request.RejectionReason)
+            ? null
+            : request.RejectionReason.Trim();
+
+        if (decision == InvitationStatuses.Rejected && rejectionReason == null)
+        {
+            throw new ErrorHandlingMiddlewareException(
+                "A rejection reason is required when declining an invitation.",
+                HttpStatusCode.BadRequest
+            );
+        }
+
+        if (decision == InvitationStatuses.Accepted && rejectionReason != null)
+        {
+            throw new ErrorHandlingMiddlewareException(
+                "A rejection reason can only be provided when declining an invitation.",
+                HttpStatusCode.BadRequest
+            );
+        }
+
+        if (rejectionReason?.Length > 500)
+        {
+            throw new ErrorHandlingMiddlewareException(
+                "Rejection reason must be 500 characters or fewer.",
+                HttpStatusCode.BadRequest
+            );
+        }
+
         var updatedInvitation = await invitationRepository.RespondToInvitation(
             invitationId,
             currentUserId,
-            decision
+            decision,
+            rejectionReason
         );
 
         if (updatedInvitation == null)
@@ -204,7 +233,8 @@ public class InvitationService(
             Status = invitation.Status,
             HasActiveAccess = invitation.HasActiveAccess,
             CreatedAt = invitation.CreatedAt,
-            RespondedAt = invitation.RespondedAt
+            RespondedAt = invitation.RespondedAt,
+            RejectionReason = invitation.RejectionReason
         };
     }
 }

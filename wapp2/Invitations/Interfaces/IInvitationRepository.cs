@@ -12,7 +12,8 @@ public interface IInvitationRepository
     Task<TaskInvitationDetailsModel?> RespondToInvitation(
         int invitationId,
         int invitedUserId,
-        string decision
+        string decision,
+        string? rejectionReason
     );
     Task<TaskInvitationModel?> DeletePendingInvitation(int invitationId, int invitedByUserId);
 }

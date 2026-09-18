@@ -1,6 +1,7 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ApiError } from "../../../lib/http-client";
 import { AuthPanel } from "./auth-panel";
 
 const authApiMock = vi.hoisted(() => ({
@@ -14,6 +15,10 @@ const authMock = vi.hoisted(() => ({
   clearAuthFeedback: vi.fn(),
   failAuthentication: vi.fn(),
   current: { error: "", status: "guest" },
+}));
+
+const readinessMock = vi.hoisted(() => ({
+  current: { retry: vi.fn(), status: "ready" },
 }));
 
 vi.mock("../api/auth-api", () => ({
@@ -31,10 +36,19 @@ vi.mock("../hooks/use-auth", () => ({
   }),
 }));
 
+vi.mock("../hooks/use-service-readiness", () => ({
+  useServiceReadiness: () => readinessMock.current,
+}));
+
 describe("AuthPanel", () => {
   beforeEach(() => {
     authMock.current = { error: "", status: "guest" };
+    readinessMock.current = { retry: vi.fn(), status: "ready" };
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("shows both validation errors without starting authentication", async () => {
@@ -101,5 +115,82 @@ describe("AuthPanel", () => {
     expect(authMock.beginAuthentication).not.toHaveBeenCalled();
     expect(passwordInput).toHaveAttribute("minlength", "6");
     expect(passwordInput).toHaveAttribute("maxlength", "20");
+  });
+
+  it("shows a spinner and blocks the form while authentication is pending", () => {
+    authMock.current = { error: "", status: "authenticating" };
+
+    render(<AuthPanel />);
+
+    expect(screen.getByRole("button", { name: "Signing in..." })).toBeDisabled();
+    expect(screen.getByLabelText("Email")).toBeDisabled();
+    expect(screen.getByLabelText("Password")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Register" })).toBeDisabled();
+  });
+
+  it("adds context when authentication takes longer than three seconds", async () => {
+    vi.useFakeTimers();
+    authMock.current = { error: "", status: "authenticating" };
+
+    render(<AuthPanel />);
+
+    await act(() => vi.advanceTimersByTimeAsync(3_000));
+
+    expect(screen.getByText("Preparing your workspace")).toBeVisible();
+    expect(screen.getByText(/continue automatically/i)).toBeVisible();
+  });
+
+  it("explains when the demo service is taking longer to wake", () => {
+    readinessMock.current = { retry: vi.fn(), status: "delayed" };
+
+    render(<AuthPanel />);
+
+    expect(screen.getByText("Waking the demo service")).toBeVisible();
+    expect(screen.getByText(/on-demand hosting/i)).toBeVisible();
+  });
+
+  it("keeps credentials and offers a manual retry after a temporary failure", async () => {
+    const user = userEvent.setup();
+    authApiMock.login.mockRejectedValueOnce(
+      new ApiError("Service unavailable", 503),
+    );
+    render(<AuthPanel />);
+
+    await user.type(screen.getByLabelText("Email"), "person@example.com");
+    await user.type(screen.getByLabelText("Password"), "secret");
+    await user.click(screen.getAllByRole("button", { name: "Login" })[1]);
+
+    expect(
+      await screen.findByText("The demo service needs a little more time"),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Email")).toHaveValue("person@example.com");
+    expect(screen.getByLabelText("Password")).toHaveValue("secret");
+
+    authApiMock.login.mockResolvedValueOnce({
+      success: true,
+      message: "Logged in.",
+      data: { token: "token" },
+    });
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+
+    await waitFor(() => expect(authApiMock.login).toHaveBeenCalledTimes(2));
+    expect(authMock.authenticate).toHaveBeenCalledWith("token");
+  });
+
+  it("keeps credential errors distinct from hosting availability", async () => {
+    const user = userEvent.setup();
+    authApiMock.login.mockRejectedValue(
+      new ApiError("Invalid email or password.", 401),
+    );
+    render(<AuthPanel />);
+
+    await user.type(screen.getByLabelText("Email"), "person@example.com");
+    await user.type(screen.getByLabelText("Password"), "secret");
+    await user.click(screen.getAllByRole("button", { name: "Login" })[1]);
+
+    expect(await screen.findByText("Invalid email or password.")).toBeVisible();
+    expect(
+      screen.queryByText("The demo service needs a little more time"),
+    ).not.toBeInTheDocument();
   });
 });

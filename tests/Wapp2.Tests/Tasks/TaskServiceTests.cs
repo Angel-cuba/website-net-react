@@ -186,6 +186,44 @@ public class TaskServiceTests
     }
 
     [Fact]
+    public async Task GetTaskSharing_MapsRecentRejectedInvitationForOwner()
+    {
+        var respondedAt = CurrentTime.UtcDateTime;
+        var repository = new TaskRepositoryStub
+        {
+            SharingDetails = new TaskSharingDetailsModel
+            {
+                TaskId = 10,
+                TaskTitle = "Shared task",
+                RecentResponses =
+                [
+                    new TaskSharingInvitationActivityDetailsModel
+                    {
+                        InvitationId = 88,
+                        InvitedEmail = "member@example.com",
+                        InvitedFirstName = "Grace",
+                        InvitedLastName = "Hopper",
+                        Status = "rejected",
+                        RejectionReason = "I am at capacity this week.",
+                        CreatedAt = respondedAt.AddHours(-1),
+                        RespondedAt = respondedAt
+                    }
+                ]
+            }
+        };
+        var service = CreateService(repository, new RecordingRealtimeNotifier());
+
+        var response = await service.GetTaskSharing(10, ownerUserId: 7);
+
+        var activity = Assert.Single(response!.RecentResponses);
+        Assert.Equal(88, activity.InvitationId);
+        Assert.Equal("Grace Hopper", activity.InvitedName);
+        Assert.Equal("rejected", activity.Status);
+        Assert.Equal("I am at capacity this week.", activity.RejectionReason);
+        Assert.Equal(respondedAt, activity.RespondedAt);
+    }
+
+    [Fact]
     public async Task UpdateTaskAccessPermission_WhenAccessDoesNotExist_ReturnsFalse()
     {
         var repository = new TaskRepositoryStub();
