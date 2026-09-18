@@ -24,7 +24,8 @@ public class InvitationRepository(ISqlConnectionFactory sqlConnectionFactory) : 
                    InvitedByUserId,
                    Status,
                    CreatedAt,
-                   RespondedAt
+                   RespondedAt,
+                   RejectionReason
             FROM dbo.TaskInvitations
             WHERE TaskId = @TaskId
               AND InvitedUserId = @InvitedUserId
@@ -55,7 +56,8 @@ public class InvitationRepository(ISqlConnectionFactory sqlConnectionFactory) : 
                    InvitedByUserId,
                    Status,
                    CreatedAt,
-                   RespondedAt
+                   RespondedAt,
+                   RejectionReason
             FROM dbo.TaskInvitations
             WHERE Id = @InvitationId
               AND InvitedUserId = @InvitedUserId
@@ -97,6 +99,7 @@ public class InvitationRepository(ISqlConnectionFactory sqlConnectionFactory) : 
                    invitation.Status,
                    invitation.CreatedAt,
                    invitation.RespondedAt,
+                   invitation.RejectionReason,
                    CAST(
                        CASE WHEN EXISTS (
                            SELECT 1
@@ -205,7 +208,8 @@ public class InvitationRepository(ISqlConnectionFactory sqlConnectionFactory) : 
     public async Task<TaskInvitationDetailsModel?> RespondToInvitation(
         int invitationId,
         int invitedUserId,
-        string decision
+        string decision,
+        string? rejectionReason
     )
     {
         if (decision != InvitationStatuses.Accepted && decision != InvitationStatuses.Rejected)
@@ -227,7 +231,8 @@ public class InvitationRepository(ISqlConnectionFactory sqlConnectionFactory) : 
                 """
                 UPDATE dbo.TaskInvitations
                 SET Status = @Decision,
-                    RespondedAt = SYSUTCDATETIME()
+                    RespondedAt = SYSUTCDATETIME(),
+                    RejectionReason = @RejectionReason
                 WHERE Id = @InvitationId
                   AND InvitedUserId = @InvitedUserId
                   AND Status = @PendingStatus
@@ -237,6 +242,7 @@ public class InvitationRepository(ISqlConnectionFactory sqlConnectionFactory) : 
                     InvitationId = invitationId,
                     InvitedUserId = invitedUserId,
                     Decision = decision,
+                    RejectionReason = rejectionReason,
                     PendingStatus = InvitationStatuses.Pending
                 },
                 transaction
@@ -307,7 +313,8 @@ public class InvitationRepository(ISqlConnectionFactory sqlConnectionFactory) : 
                    DELETED.InvitedByUserId,
                    DELETED.Status,
                    DELETED.CreatedAt,
-                   DELETED.RespondedAt
+                   DELETED.RespondedAt,
+                   DELETED.RejectionReason
             FROM dbo.TaskInvitations invitation
             INNER JOIN dbo.Tasks task ON task.Id = invitation.TaskId
             WHERE invitation.Id = @InvitationId
@@ -344,6 +351,7 @@ public class InvitationRepository(ISqlConnectionFactory sqlConnectionFactory) : 
                    invitation.Status,
                    invitation.CreatedAt,
                    invitation.RespondedAt,
+                   invitation.RejectionReason,
                    CAST(
                        CASE WHEN EXISTS (
                            SELECT 1

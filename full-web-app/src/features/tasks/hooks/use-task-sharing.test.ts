@@ -255,6 +255,7 @@ function createSharing(overrides: Partial<TaskSharing> = {}): TaskSharing {
         createdAt: '2026-09-12T09:00:00Z',
       },
     ],
+    recentResponses: [],
     members: [
       {
         accessId: 20,

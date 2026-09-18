@@ -192,9 +192,11 @@ servicios, repositorios, modelos e interfaces cuando son necesarios.
 - crea invitaciones para cuentas registradas;
 - impide auto-invitaciones, accesos duplicados e invitaciones pendientes
   duplicadas;
-- permite aceptar o rechazar una invitacion pendiente;
+- permite aceptar o rechazar una invitacion pendiente y exige al rechazar un
+  motivo de hasta 500 caracteres;
 - crea `TaskAccess` con `CanEdit = 0` al aceptar;
 - conserva un historial deduplicado por tarea y destinatario;
+- muestra al owner los diez rechazos mas recientes de cada tarea;
 - permite al owner cancelar invitaciones que aun estan pendientes.
 
 ### Notifications
@@ -286,10 +288,15 @@ sequenceDiagram
     API->>DB: Insert pending invitation
     API-->>R: SignalR InvitationsChanged
     R->>API: GET /api/invitations
-    R->>API: PATCH /api/invitations/{id} accepted
-    API->>DB: Update invitation and insert TaskAccess CanEdit=0
+    R->>API: PATCH /api/invitations/{id}
+    alt accepted
+        API->>DB: Update invitation and insert TaskAccess CanEdit=0
+        API-->>R: SignalR SharedTasksChanged
+    else rejected
+        API->>DB: Store rejected status and required reason
+    end
     API-->>O: SignalR TaskSharingChanged
-    API-->>R: SignalR SharedTasksChanged
+    API-->>R: SignalR InvitationsChanged
     O->>API: PATCH /api/tasks/{id}/access/{accessId}
     API->>DB: Grant or remove CanEdit
     API-->>R: SignalR SharedTasksChanged
@@ -304,7 +311,10 @@ Reglas principales:
   destinatario;
 - no se puede invitar a quien ya tiene acceso;
 - aceptar crea acceso de solo lectura;
-- rechazar no crea acceso;
+- rechazar no crea acceso y exige un motivo de hasta 500 caracteres;
+- el motivo se recorta, no puede estar vacio y no se permite al aceptar;
+- solo el destinatario responde y solo el owner puede consultar los rechazos
+  recientes desde el detalle de acceso de la tarea;
 - revocar acceso conserva la ultima invitacion como historial, marcada sin
   acceso activo;
 - una reinvitacion posterior sustituye visualmente el ciclo anterior en el
@@ -404,10 +414,10 @@ Todos los endpoints salvo registro y login requieren JWT.
 | `DELETE` | `/api/tasks/{id}` | Owner | eliminar tarea |
 | `GET` | `/api/tasks/shared` | Usuario | tareas compartidas con el usuario |
 | `GET` | `/api/tasks/shared/owned` | Owner | tareas propias con actividad de sharing |
-| `GET` | `/api/tasks/{id}/sharing` | Owner | pendientes y miembros con acceso |
+| `GET` | `/api/tasks/{id}/sharing` | Owner | pendientes, rechazos recientes y miembros con acceso |
 | `POST` | `/api/tasks/{id}/invitations` | Owner | invitar cuenta registrada |
 | `GET` | `/api/invitations` | Destinatario | listar pendientes e historial |
-| `PATCH` | `/api/invitations/{id}` | Destinatario | aceptar o rechazar |
+| `PATCH` | `/api/invitations/{id}` | Destinatario | aceptar o rechazar; el rechazo exige motivo |
 | `DELETE` | `/api/invitations/{id}` | Owner | cancelar una invitacion pendiente |
 | `PATCH` | `/api/tasks/{id}/access/{accessId}` | Owner | cambiar `CanEdit` |
 | `DELETE` | `/api/tasks/{id}/access/{accessId}` | Owner | revocar acceso |
@@ -458,7 +468,8 @@ Tablas utilizadas por el codigo principal:
 - `dbo.Roles`: catalogo de roles;
 - `dbo.UserRoles`: relacion usuario-rol;
 - `dbo.Tasks`: contenido, owner, estado, prioridad y fechas;
-- `dbo.TaskInvitations`: destinatario, remitente, estado y fechas;
+- `dbo.TaskInvitations`: destinatario, remitente, estado, motivo de rechazo y
+  fechas;
 - `dbo.TaskAccess`: permiso activo y `CanEdit`;
 - `dbo.Notifications`: incluida en la limpieza de cuenta, sin flujo de inbox
   implementado en este repositorio.
@@ -477,6 +488,15 @@ La migracion
 titulo entre React, ASP.NET Core y SQL Server: cambia `Tasks.Title` a
 `nvarchar(150)`, comprueba que no haya datos incompatibles y registra su
 ejecucion de forma idempotente.
+
+La migracion
+`database/migrations/20260918_003_invitation_rejection_reason.sql` agrega
+`TaskInvitations.RejectionReason` como `nvarchar(500) NULL` y una constraint que
+solo permite contenido no vacio cuando la invitacion esta rechazada.
+
+`database/migrations/20260918_004_require_invitation_rejection_reason.sql`
+normaliza los rechazos historicos sin explicacion y exige un motivo no vacio en
+los nuevos rechazos. La API y el frontend aplican la misma regla.
 
 `database/baseline.sql` crea primero las tablas base. Las migraciones se aplican
 despues, en orden, para actualizar un esquema existente.
@@ -526,12 +546,29 @@ orden. Por ejemplo, con `sqlcmd` y autenticacion interactiva:
 sqlcmd -S localhost,1433 -d Wapp2DB -U sa -C -b -i database/baseline.sql
 sqlcmd -S localhost,1433 -d Wapp2DB -U sa -C -b -i database/migrations/20260910_001_task_sharing_constraints.sql
 sqlcmd -S localhost,1433 -d Wapp2DB -U sa -C -b -i database/migrations/20260917_002_expand_task_title.sql
+sqlcmd -S localhost,1433 -d Wapp2DB -U sa -C -b -i database/migrations/20260918_003_invitation_rejection_reason.sql
+sqlcmd -S localhost,1433 -d Wapp2DB -U sa -C -b -i database/migrations/20260918_004_require_invitation_rejection_reason.sql
 ```
 
 `baseline.sql` crea el esquema completo, los roles iniciales y
 `SchemaMigrations`. Los scripts detectan ejecuciones previas y no deben editarse
 despues de haberse aplicado; los cambios posteriores pertenecen a una migracion
 nueva.
+
+Una base creada antes de introducir `SchemaMigrations` no debe recibir la
+baseline porque ya contiene datos y tablas. En ese caso se adopta una sola vez y
+despues se aplican las migraciones en orden:
+
+```bash
+sqlcmd -S localhost,1433 -d Wapp2DB -U sa -C -b -i database/adopt-existing.sql
+sqlcmd -S localhost,1433 -d Wapp2DB -U sa -C -b -i database/migrations/20260910_001_task_sharing_constraints.sql
+sqlcmd -S localhost,1433 -d Wapp2DB -U sa -C -b -i database/migrations/20260917_002_expand_task_title.sql
+sqlcmd -S localhost,1433 -d Wapp2DB -U sa -C -b -i database/migrations/20260918_003_invitation_rejection_reason.sql
+sqlcmd -S localhost,1433 -d Wapp2DB -U sa -C -b -i database/migrations/20260918_004_require_invitation_rejection_reason.sql
+```
+
+`adopt-existing.sql` solo crea el historial y registra el baseline despues de
+comprobar que existen las ocho tablas base; no recrea tablas ni elimina datos.
 
 En el contenedor SQL Server local usado durante la preparacion, Go `sqlcmd`
 rechazo el certificado de desarrollo con `x509: negative serial number`. Solo

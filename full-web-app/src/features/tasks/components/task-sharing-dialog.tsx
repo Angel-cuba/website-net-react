@@ -4,6 +4,7 @@ import {
   Clock3,
   LoaderCircle,
   MailPlus,
+  MessageSquareX,
   Send,
   ShieldCheck,
   Trash2,
@@ -180,6 +181,51 @@ export function TaskSharingDialog({ onClose, task }: TaskSharingDialogProps) {
                 </ul>
               ) : (
                 <p className="sharing-empty">No pending invitations.</p>
+              )}
+            </section>
+
+            <section aria-labelledby="recent-invitation-responses-heading">
+              <div className="sharing-section__heading">
+                <div>
+                  <MessageSquareX aria-hidden="true" />
+                  <h3 id="recent-invitation-responses-heading">
+                    Declined invitations
+                  </h3>
+                </div>
+                <span>{sharing?.recentResponses.length ?? 0}</span>
+              </div>
+
+              {sharing?.recentResponses.length ? (
+                <ul className="sharing-list sharing-response-list">
+                  {sharing.recentResponses.map((response) => (
+                    <li key={response.invitationId}>
+                      <div className="sharing-response__person">
+                        <UserIdentity
+                          avatarUrl={response.invitedAvatarUrl}
+                          email={response.invitedEmail}
+                          name={response.invitedName}
+                        />
+                        {response.rejectionReason && (
+                          <p className="sharing-response__reason">
+                            “{response.rejectionReason}”
+                          </p>
+                        )}
+                      </div>
+                      <div className="sharing-response__meta">
+                        <span className="invitation-status invitation-status--rejected">
+                          <X aria-hidden="true" />
+                          Declined
+                        </span>
+                        <span>
+                          <Clock3 aria-hidden="true" />
+                          {formatActivityDate(response.respondedAt)}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="sharing-empty">No declined invitations.</p>
               )}
             </section>
 

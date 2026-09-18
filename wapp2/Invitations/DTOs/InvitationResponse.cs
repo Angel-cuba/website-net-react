@@ -12,4 +12,5 @@ public class InvitationResponse
     public bool HasActiveAccess { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? RespondedAt { get; set; }
+    public string? RejectionReason { get; set; }
 }

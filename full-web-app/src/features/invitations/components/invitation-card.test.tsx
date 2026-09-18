@@ -5,7 +5,7 @@ import type { InvitationItem } from '../types/invitation'
 import { InvitationCard } from './invitation-card'
 
 describe('InvitationCard', () => {
-  it('allows a pending invitation to be accepted or declined', async () => {
+  it('accepts immediately and confirms a decline with a required reason', async () => {
     const user = userEvent.setup()
     const onRespond = vi.fn().mockResolvedValue(true)
     renderInvitation({ onRespond })
@@ -15,9 +15,52 @@ describe('InvitationCard', () => {
 
     await user.click(screen.getByRole('button', { name: 'Accept' }))
     await user.click(screen.getByRole('button', { name: 'Decline' }))
+    await user.type(
+      screen.getByRole('textbox', { name: /Reason for declining/i }),
+      'I am at capacity this week.',
+    )
+    await user.click(screen.getByRole('button', { name: 'Confirm decline' }))
 
     expect(onRespond).toHaveBeenNthCalledWith(1, 12, 'accepted')
-    expect(onRespond).toHaveBeenNthCalledWith(2, 12, 'rejected')
+    expect(onRespond).toHaveBeenNthCalledWith(
+      2,
+      12,
+      'rejected',
+      'I am at capacity this week.',
+    )
+  })
+
+  it('does not submit a decline with an empty or whitespace-only reason', async () => {
+    const user = userEvent.setup()
+    const onRespond = vi.fn().mockResolvedValue(true)
+    renderInvitation({ onRespond })
+
+    await user.click(screen.getByRole('button', { name: 'Decline' }))
+
+    const reason = screen.getByRole('textbox', { name: /Reason for declining/i })
+    const confirm = screen.getByRole('button', { name: 'Confirm decline' })
+
+    expect(confirm).toBeDisabled()
+    await user.type(reason, '   ')
+    expect(confirm).toBeDisabled()
+    expect(onRespond).not.toHaveBeenCalled()
+  })
+
+  it('cancels a decline without responding and clears the draft', async () => {
+    const user = userEvent.setup()
+    const onRespond = vi.fn().mockResolvedValue(true)
+    renderInvitation({ onRespond })
+
+    await user.click(screen.getByRole('button', { name: 'Decline' }))
+    const reason = screen.getByRole('textbox', { name: /Reason for declining/i })
+    await user.type(reason, 'Not this week')
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(onRespond).not.toHaveBeenCalled()
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Decline' }))
+    expect(screen.getByRole('textbox')).toHaveValue('')
   })
 
   it('disables pending actions while another operation is active', () => {
@@ -51,6 +94,7 @@ describe('InvitationCard', () => {
       invitation: createInvitation({
         invitedByName: '',
         status: 'rejected',
+        rejectionReason: 'The timing does not work for me.',
         createdAt: 'not-a-date',
       }),
     })
@@ -58,6 +102,7 @@ describe('InvitationCard', () => {
     expect(screen.getByText('Declined')).toBeVisible()
     expect(screen.getByText('owner@example.com')).toBeVisible()
     expect(screen.getByText('Sent on an unknown date')).toBeVisible()
+    expect(screen.getByText('The timing does not work for me.')).toBeVisible()
   })
 })
 
@@ -87,6 +132,7 @@ function createInvitation(overrides: Partial<InvitationItem> = {}): InvitationIt
     hasActiveAccess: false,
     createdAt: '2026-09-12T08:00:00Z',
     respondedAt: null,
+    rejectionReason: null,
     ...overrides,
   }
 }

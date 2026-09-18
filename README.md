@@ -13,9 +13,10 @@ El flujo principal esta implementado y validado en local:
 - CRUD de tareas por usuario;
 - fecha limite minima de cinco horas en el formulario;
 - invitaciones por email entre cuentas registradas;
-- aceptacion, rechazo, cancelacion y reinvitacion;
+- aceptacion, rechazo con motivo obligatorio, cancelacion y reinvitacion;
 - acceso inicial `View only` y permiso opcional `Can edit`;
 - vistas de invitaciones y tareas compartidas;
+- historial reciente de rechazos visible para el owner;
 - actualizaciones de sharing mediante SignalR;
 - eliminacion transaccional de cuenta y datos relacionados.
 
@@ -111,6 +112,11 @@ Para una base vacia, aplicar primero `database/baseline.sql` y despues los
 scripts de `database/migrations` en orden. Ambos tipos de script registran su
 ejecucion en `SchemaMigrations` y pueden volver a ejecutarse sin duplicar el
 esquema.
+
+Si una instalacion anterior ya contiene las tablas de Wapp2 pero no
+`SchemaMigrations`, ejecutar una sola vez `database/adopt-existing.sql` y luego
+aplicar todas las migraciones en orden. El script de adopcion conserva los datos
+y se detiene si falta alguna tabla base.
 
 ### Frontend
 

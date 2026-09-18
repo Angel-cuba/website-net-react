@@ -94,6 +94,7 @@ export function InvitationsProvider({ children }: InvitationsProviderProps) {
   const respond = useCallback(async (
     invitationId: number,
     decision: InvitationDecision,
+    rejectionReason?: string,
   ): Promise<boolean> => {
     if (!isAuthenticated || !userId) return false;
 
@@ -102,7 +103,11 @@ export function InvitationsProvider({ children }: InvitationsProviderProps) {
     setRespondingInvitationId(invitationId);
 
     try {
-      const response = await respondToInvitation(invitationId, { decision });
+      const normalizedReason = rejectionReason?.trim();
+      const response = await respondToInvitation(invitationId, {
+        decision,
+        ...(normalizedReason ? { rejectionReason: normalizedReason } : {}),
+      });
 
       if (!response.data) {
         throw new Error("The API did not return the updated invitation.");

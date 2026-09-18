@@ -74,6 +74,23 @@ namespace Tasks.Services
                         CreatedAt = invitation.CreatedAt
                     })
                     .ToList(),
+                RecentResponses = sharing.RecentResponses
+                    .Select(invitation => new TaskInvitationActivityResponse
+                    {
+                        InvitationId = invitation.InvitationId,
+                        InvitedEmail = invitation.InvitedEmail,
+                        InvitedName = FormatDisplayName(
+                            invitation.InvitedFirstName,
+                            invitation.InvitedLastName,
+                            invitation.InvitedEmail
+                        ),
+                        InvitedAvatarUrl = invitation.InvitedAvatarUrl,
+                        Status = invitation.Status,
+                        RejectionReason = invitation.RejectionReason,
+                        CreatedAt = invitation.CreatedAt,
+                        RespondedAt = invitation.RespondedAt
+                    })
+                    .ToList(),
                 Members = sharing.Members
                     .Select(member => new TaskAccessResponse
                     {

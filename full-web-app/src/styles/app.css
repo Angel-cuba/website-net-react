@@ -971,6 +971,51 @@ input[aria-invalid="true"]:focus {
   height: 17px;
 }
 
+.sharing-response-list > li {
+  align-items: flex-start;
+}
+
+.sharing-response__person {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-2);
+}
+
+.sharing-response__reason {
+  max-width: 420px;
+  padding-left: 44px;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.sharing-response__meta,
+.sharing-response__meta > span {
+  display: flex;
+  align-items: center;
+}
+
+.sharing-response__meta {
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.sharing-response__meta > span:last-child {
+  gap: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: 0.6875rem;
+}
+
+.sharing-response__meta svg {
+  width: 13px;
+  height: 13px;
+}
+
 .access-permission {
   display: flex;
   min-height: 32px;
@@ -1196,6 +1241,60 @@ input[aria-invalid="true"]:focus {
   justify-content: flex-end;
   gap: var(--space-2);
   margin-top: var(--space-4);
+}
+
+.invitation-card__reason {
+  padding: var(--space-3);
+  margin-top: var(--space-3);
+  border-left: 3px solid var(--color-border-strong);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.invitation-card__reason strong,
+.invitation-card__reason p {
+  margin: 0;
+}
+
+.invitation-card__reason p {
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.invitation-decline {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  margin-top: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.invitation-decline label,
+.invitation-decline textarea {
+  width: 100%;
+}
+
+.invitation-decline small {
+  margin-left: 4px;
+  color: var(--color-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.invitation-decline textarea {
+  min-height: 78px;
+  margin-top: var(--space-2);
+}
+
+.invitation-decline__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
 }
 
 .invitation-section-empty {
@@ -1863,6 +1962,22 @@ input[aria-invalid="true"]:focus {
     padding-left: 44px;
   }
 
+  .sharing-response-list > li,
+  .sharing-response__meta {
+    align-items: stretch;
+  }
+
+  .sharing-response__person,
+  .sharing-response__meta {
+    width: 100%;
+  }
+
+  .sharing-response__meta {
+    flex-direction: row;
+    justify-content: space-between;
+    padding-left: 44px;
+  }
+
   .invitations-panel .view-heading {
     align-items: center;
   }
@@ -1885,6 +2000,10 @@ input[aria-invalid="true"]:focus {
   }
 
   .invitation-card__actions .button {
+    flex: 1;
+  }
+
+  .invitation-decline__actions .button {
     flex: 1;
   }
 

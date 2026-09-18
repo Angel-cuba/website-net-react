@@ -13,6 +13,7 @@ export type InvitationItem = {
   hasActiveAccess: boolean;
   createdAt: string;
   respondedAt: string | null;
+  rejectionReason: string | null;
 };
 
 export type CreateInvitationRequest = {
@@ -21,4 +22,5 @@ export type CreateInvitationRequest = {
 
 export type RespondInvitationRequest = {
   decision: InvitationDecision;
+  rejectionReason?: string;
 };

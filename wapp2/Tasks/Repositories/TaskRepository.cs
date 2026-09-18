@@ -217,6 +217,27 @@ namespace Tasks.Repositories
                   AND invitation.Status = @PendingStatus
                 ORDER BY invitation.CreatedAt DESC;
 
+                SELECT TOP (10)
+                       invitation.Id AS InvitationId,
+                       invitation.InvitedUserId,
+                       COALESCE(invitation.InvitedEmail, invited.Email, '') AS InvitedEmail,
+                       COALESCE(profile.FirstName, '') AS InvitedFirstName,
+                       COALESCE(profile.LastName, '') AS InvitedLastName,
+                       profile.AvatarUrl AS InvitedAvatarUrl,
+                       invitation.Status,
+                       invitation.RejectionReason,
+                       invitation.CreatedAt,
+                       invitation.RespondedAt
+                FROM dbo.TaskInvitations invitation
+                INNER JOIN dbo.Tasks task ON task.Id = invitation.TaskId
+                LEFT JOIN dbo.Users invited ON invited.Id = invitation.InvitedUserId
+                LEFT JOIN dbo.UserProfiles profile ON profile.UserId = invited.Id
+                WHERE invitation.TaskId = @TaskId
+                  AND task.OwnerUserId = @OwnerUserId
+                  AND invitation.Status = @RejectedStatus
+                  AND invitation.RespondedAt IS NOT NULL
+                ORDER BY invitation.RespondedAt DESC, invitation.Id DESC;
+
                 SELECT access.Id AS AccessId,
                        access.UserId,
                        member.Email,
@@ -237,13 +258,17 @@ namespace Tasks.Repositories
                 {
                     TaskId = taskId,
                     OwnerUserId = ownerUserId,
-                    PendingStatus = Wapp2.Invitations.Models.InvitationStatuses.Pending
+                    PendingStatus = Wapp2.Invitations.Models.InvitationStatuses.Pending,
+                    RejectedStatus = Wapp2.Invitations.Models.InvitationStatuses.Rejected
                 }
             );
 
             var sharing = await result.ReadSingleOrDefaultAsync<TaskSharingDetailsModel>();
             var pendingInvitations = (
                 await result.ReadAsync<TaskSharingInvitationDetailsModel>()
+            ).AsList();
+            var recentResponses = (
+                await result.ReadAsync<TaskSharingInvitationActivityDetailsModel>()
             ).AsList();
             var members = (await result.ReadAsync<TaskAccessDetailsModel>()).AsList();
 
@@ -253,6 +278,7 @@ namespace Tasks.Repositories
             }
 
             sharing.PendingInvitations = pendingInvitations;
+            sharing.RecentResponses = recentResponses;
             sharing.Members = members;
             return sharing;
         }
